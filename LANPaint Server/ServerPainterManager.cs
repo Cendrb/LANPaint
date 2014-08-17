@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Ink;
+using System.Windows.Input;
 using Util;
 
 namespace LANPaint_Server
@@ -17,6 +18,7 @@ namespace LANPaint_Server
     {
         public string Name { get; private set; }
         PainterClientCollection clients;
+        SignedStrokeCollection signedStrokes;
         public bool Listening { get; private set; }
         TcpListener listener;
         public InkCanvas MainCanvas { get; private set; }
@@ -27,6 +29,16 @@ namespace LANPaint_Server
             clients = new PainterClientCollection();
             listener = new TcpListener(IPAddress.Any, StaticPenises.CS_PORT);
             MainCanvas = canvas;
+            signedStrokes = new SignedStrokeCollection();
+            signedStrokes.StrokeAdded += (penis) => MainCanvas.Dispatcher.Invoke(new Action(() => MainCanvas.Strokes.Add(penis)));
+            signedStrokes.StrokeRemoved += (penis) => MainCanvas.Dispatcher.Invoke(new Action(() => MainCanvas.Strokes.Remove(penis)));
+            StylusPointCollection demoPoints = new StylusPointCollection();
+            demoPoints.Add(new StylusPoint(0, 0));
+            demoPoints.Add(new StylusPoint(69, 23));
+            SignedStroke stroke = new SignedStroke(demoPoints);
+            stroke.Id = 69;
+            stroke.Owner = "Template";
+            MainCanvas.Strokes.Add(stroke);
         }
 
         public void StartAsync()
@@ -42,8 +54,8 @@ namespace LANPaint_Server
             while (Listening)
             {
                 TcpClient client = listener.AcceptTcpClient();
-                PainterReceiver receiver = new PainterReceiver(client, MainCanvas);
-                PainterSender sender = new PainterSender(MainCanvas, Name);
+                PainterReceiver receiver = new PainterReceiver(client, MainCanvas, signedStrokes);
+                PainterSender sender = new PainterSender(MainCanvas, Name, signedStrokes);
                 PainterClient painter = new PainterClient(receiver, sender);
                 try
                 {
@@ -51,8 +63,8 @@ namespace LANPaint_Server
                     IPEndPoint remote = (IPEndPoint)client.Client.RemoteEndPoint;
                     painter.Sender.Connect(remote.Address, StaticPenises.SC_PORT);
                     painter.Receiver.Disconnected += Receiver_Disconnected;
-                    painter.Receiver.StrokeReceived += (stroke) => sendStrokeToAllClientsBut(stroke, painter);
-                    painter.Receiver.StrokeRemoved += (stroke) => removeStrokeInAllClientsBut(stroke, painter);
+                    //painter.Receiver.StrokeReceived += (stroke) => sendStrokeToAllClientsBut(stroke, painter);
+                    //painter.Receiver.StrokeRemoved += (stroke) => removeStrokeInAllClientsBut(stroke, painter);
                     painter.Sender.SendWholeCanvas();
                 }
                 catch (NameDuplicateException e)

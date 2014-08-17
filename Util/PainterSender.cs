@@ -20,7 +20,7 @@ namespace Util
         TcpClient client;
         InkCanvas canvas;
         NetworkStream stream;
-
+        SignedStrokeCollection signedStrokes;
         public string Name { get; private set; }
 
         public bool Connected
@@ -31,8 +31,9 @@ namespace Util
             }
         }
 
-        public PainterSender(InkCanvas canvas, string name)
+        public PainterSender(InkCanvas canvas, string name, SignedStrokeCollection collection)
         {
+            signedStrokes = collection;
             this.canvas = canvas;
             Name = name;
         }
@@ -48,14 +49,15 @@ namespace Util
             lock (client)
             {
                 client.Connect(address, port);
-                client.Client.Send(StringBitConverter.GetBytes(Name));
+
+                stream = client.GetStream();
+
+                stream.Write(StringBitConverter.GetBytes(Name, sizeof(char) * 128), 0, sizeof(char) * 128);
 
                 double x = canvas.Dispatcher.Invoke(new Func<double>(() => canvas.Width));
                 double y = canvas.Dispatcher.Invoke(new Func<double>(() => canvas.Height));
-                client.Client.Send(BitConverter.GetBytes(x));
-                client.Client.Send(BitConverter.GetBytes(y));
-
-                stream = client.GetStream();
+                stream.Write(BitConverter.GetBytes(x), 0, sizeof(double));
+                stream.Write(BitConverter.GetBytes(y), 0, sizeof(double));
             }
         }
 
@@ -66,7 +68,11 @@ namespace Util
                 stream.WriteByte(Commands.CS_SEND_WHOLE_CANVAS);
                 Stream strokesStream = new MemoryStream();
                 canvas.Dispatcher.Invoke(new Action(() => canvas.Strokes.Save(strokesStream)));
-                strokesStream.CopyTo(stream);
+                stream.Write(BitConverter.GetBytes(strokesStream.Length), 0, sizeof(long));
+                byte[] temp = new byte[strokesStream.Length];
+                strokesStream.Seek(0, SeekOrigin.Begin);
+                strokesStream.Read(temp, 0, (int)strokesStream.Length);
+                stream.Write(temp, 0, temp.Length);
             }
         }
 

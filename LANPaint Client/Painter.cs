@@ -29,10 +29,12 @@ namespace LANPaint_Client
         {
             MainCanvas = canvas;
             Name = name;
-             
+
             signedStrokes = new SignedStrokeCollection();
+            signedStrokes.StrokeAdded += (penis) => MainCanvas.Dispatcher.Invoke(new Action(() => MainCanvas.Strokes.Add(penis)));
+            signedStrokes.StrokeRemoved += (penis) => MainCanvas.Dispatcher.Invoke(new Action(() => MainCanvas.Strokes.Remove(penis)));
             toolRoller = new Painter.ToolRoller();
-            Sender = new PainterSender(MainCanvas, Name);
+            Sender = new PainterSender(MainCanvas, Name, signedStrokes);
 
             MainCanvas.EraserShape = new EllipseStylusShape(1, 1);
             MainCanvas.DefaultDrawingAttributes.FitToCurve = true;
@@ -47,7 +49,7 @@ namespace LANPaint_Client
             TcpListener listener = new TcpListener(IPAddress.Parse("127.0.0.1"), StaticPenises.SC_PORT);
             listener.Start();
             Sender.Connect(IPAddress.Parse("127.0.0.1"), StaticPenises.CS_PORT);
-            Receiver = new PainterReceiver(listener.AcceptTcpClient(), MainCanvas);
+            Receiver = new PainterReceiver(listener.AcceptTcpClient(), MainCanvas, signedStrokes);
             listener.Stop();
             MainCanvas.Width = Receiver.XCanvasSize;
             MainCanvas.Height = Receiver.YCanvasSize;
@@ -55,17 +57,17 @@ namespace LANPaint_Client
 
         private void Strokes_StrokesChanged(object sender, StrokeCollectionChangedEventArgs e)
         {
-            foreach(Stroke addedStroke in e.Added)
+            foreach (Stroke addedStroke in e.Added)
             {
                 SignedStroke addedSignedStroke = generateSignedStroke(addedStroke);
                 signedStrokes.Add(addedSignedStroke);
-                Sender.SendStroke(addedSignedStroke);
+                Task.Factory.StartNew(new Action(() => Sender.SendStroke(addedSignedStroke)));
             }
             foreach (Stroke removedStroke in e.Removed)
             {
                 SignedStroke signed = signedStrokes.GetSignedWithBase(removedStroke);
                 signedStrokes.Remove(signed);
-                Sender.RemoveStroke(signed);
+                Task.Factory.StartNew(new Action(() => Sender.RemoveStroke(signed)));
             }
         }
 
@@ -83,7 +85,7 @@ namespace LANPaint_Client
 
         private void Canvas_StrokesReplaced(object sender, InkCanvasStrokesReplacedEventArgs e)
         {
-
+            e.NewStrokes.StrokesChanged += Strokes_StrokesChanged;
         }
 
         private void Canvas_MouseWheel(object sender, MouseWheelEventArgs e)

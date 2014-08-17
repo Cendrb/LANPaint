@@ -11,9 +11,13 @@ namespace Util
     {
         private List<SignedStroke> signedStrokes = new List<SignedStroke>();
 
+        public event Action<SignedStroke> StrokeAdded = delegate { };
+        public event Action<SignedStroke> StrokeRemoved = delegate { };
+
         public void Add(SignedStroke item)
         {
             signedStrokes.Add(item);
+            StrokeAdded(item);
         }
 
         public void Clear()
@@ -32,6 +36,11 @@ namespace Util
                 if (signed.IsBase(item))
                     return true;
             return false;
+        }
+
+        public byte[] Save()
+        {
+
         }
 
         public SignedStroke GetSignedWithBase(Stroke item)
@@ -59,16 +68,18 @@ namespace Util
 
         public bool Remove(SignedStroke item)
         {
+            StrokeRemoved(item);
             return signedStrokes.Remove(item);
         }
 
         public bool Remove(Stroke item)
         {
-            foreach(SignedStroke signed in signedStrokes.ToList())
+            foreach (SignedStroke signed in signedStrokes.ToList())
             {
                 if (signed.IsBase(item))
                 {
                     signedStrokes.Remove(signed);
+                    StrokeRemoved(signed);
                     return true;
                 }
             }

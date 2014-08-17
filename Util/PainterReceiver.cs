@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -19,14 +20,16 @@ namespace Util
         TcpClient remote;
         InkCanvas canvas;
         NetworkStream remoteStream;
+        SignedStrokeCollection signedStrokes;
 
         public string Name { get; private set; }
 
         public double XCanvasSize { get; private set; }
         public double YCanvasSize { get; private set; }
 
-        public PainterReceiver(TcpClient remote, InkCanvas canvas)
+        public PainterReceiver(TcpClient remote, InkCanvas canvas, SignedStrokeCollection collection)
         {
+            signedStrokes = collection;
             this.canvas = canvas;
             if (remote == null || !remote.Connected)
                 throw new ApplicationException("Passed client is not connected");
@@ -68,7 +71,13 @@ namespace Util
 
         private void receiveWholeCanvas()
         {
-            canvas.Dispatcher.Invoke(new Action(() => canvas.Strokes = new StrokeCollection(remoteStream)));
+            byte[] arrayLengthBytes = new byte[sizeof(long)];
+            remoteStream.Read(arrayLengthBytes, 0, arrayLengthBytes.Length);
+            long arrayLength = BitConverter.ToInt64(arrayLengthBytes, 0);
+            byte[] canvasBytes = new byte[arrayLength];
+            remoteStream.Read(canvasBytes, 0, canvasBytes.Length);
+            StrokeCollection strokes = new StrokeCollection(new MemoryStream(canvasBytes));
+            canvas.Dispatcher.Invoke(new Action(() => canvas.Strokes = strokes));
         }
 
         private void getNameFromRemote()
@@ -113,7 +122,7 @@ namespace Util
             if (strokesToRemove.Count() > 1)
                 throw new ApplicationException(String.Format("Found two strokes with same id {0}", id));
             if (strokesToRemove.Count() > 0)
-                canvas.Dispatcher.BeginInvoke(new Action(() => canvas.Strokes.Remove(strokesToRemove.First())));
+                signedStrokes.Remove(strokesToRemove.First());
             else
                 throw new ApplicationException(String.Format("No strokes with specified id {0} were found", id));
             return strokesToRemove.First();
@@ -137,7 +146,7 @@ namespace Util
             try
             {
                 SignedStroke stroke = StrokeBitConverter.GetStroke(bytes);
-                canvas.Dispatcher.BeginInvoke(new Action(() => canvas.Strokes.Add(stroke)));
+                signedStrokes.Add(stroke);
                 StrokeReceived(stroke);
             }
             catch (Exception e)
