@@ -1,0 +1,9 @@
+﻿<Window x:Class="Test.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="MainWindow" Height="350" Width="525">
+    <Grid>
+        <InkCanvas x:Name="clientCanvas" Margin="10,10,10,0" Background="#FFE4E4E4" SizeChanged="mainCanvas_SizeChanged" Height="300" VerticalAlignment="Top" />
+        <InkCanvas x:Name="serverCanvas" Margin="10,0,10,10" Background="#FFE4E4E4" SizeChanged="mainCanvas_SizeChanged" Height="300" VerticalAlignment="Bottom" />
+    </Grid>
+</Window>

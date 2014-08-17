@@ -1,0 +1,8 @@
+﻿<Window x:Class="LANPaint_Server.MainServer"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Server" Height="378.464" Width="591.416" ResizeMode="CanMinimize">
+    <Grid>
+        <InkCanvas x:Name="mainCanvas" Margin="10" IsEnabled="False" Background="#FFE8E8E8"></InkCanvas>
+    </Grid>
+</Window>
