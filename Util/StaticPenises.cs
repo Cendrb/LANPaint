@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Util
 {
+    public enum PermissionType { ReadEdit, Read}
     public class StaticPenises
     {
         public const int CS_PORT = 3333;

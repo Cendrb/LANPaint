@@ -10,13 +10,22 @@ namespace LANPaint_Server
 {
     public class PainterClient
     {
+        public PainterClientWindow ControlComponent { get; private set; }
+
         public PainterReceiver Receiver { get; private set; }
         public PainterSender Sender { get; private set; }
 
-        public PainterClient(PainterReceiver receiver, PainterSender sender)
+        public int PermissionLevel { get; set; }
+        public PermissionType PermissionType { get; set; }
+
+        public PainterClient(PainterReceiver receiver, PainterSender sender, PermissionType permissionType, int permissionLevel)
         {
             Receiver = receiver;
             Sender = sender;
+            PermissionLevel = permissionLevel;
+            PermissionType = permissionType;
+
+            sender.MainCanvas.Dispatcher.Invoke(new Action(() => ControlComponent = new PainterClientWindow(this)));
         }
 
         public static bool operator == (PainterClient first, PainterClient second)

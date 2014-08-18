@@ -26,9 +26,9 @@ namespace Test
         {
             InitializeComponent();
 
-            ServerPainterManager server = new ServerPainterManager(serverCanvas, "Vzdálený penis");
+            Server server = new Server(serverCanvas, "Vzdálený penis");
             server.Start();
-            Painter painter = new Painter(clientCanvas, "Klientský penis");
+            Client painter = new Client(clientCanvas, "Klientský penis");
             
         }
 

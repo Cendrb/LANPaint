@@ -16,23 +16,23 @@ namespace Util
 
         public static void Debug(string message)
         {
-            Trace.WriteLine(getTimePrefix() + message);
+            Console.WriteLine(getTimePrefix() + message);
         }
 
         public static void Warning(string message)
         {
-
+            Console.WriteLine(getTimePrefix() + message);
         }
 
         public static void Error(string message)
         {
-
+            Console.WriteLine(getTimePrefix() + message);
         }
 
         public static void Error(Exception e)
         {
-            Trace.WriteLine(getTimePrefix() + e.Message);
-            Trace.WriteLine(e.StackTrace);
+            Console.WriteLine(getTimePrefix() + e.Message);
+            Console.WriteLine(e.StackTrace);
         }
     }
 }

@@ -18,10 +18,11 @@ namespace Util
         public event Action<PainterSender> Disconnected = delegate { };
 
         TcpClient client;
-        InkCanvas canvas;
         NetworkStream stream;
         SignedStrokeCollection signedStrokes;
         public string Name { get; private set; }
+
+        public InkCanvas MainCanvas { get; private set; }
 
         public bool Connected
         {
@@ -34,7 +35,7 @@ namespace Util
         public PainterSender(InkCanvas canvas, string name, SignedStrokeCollection collection)
         {
             signedStrokes = collection;
-            this.canvas = canvas;
+            this.MainCanvas = canvas;
             Name = name;
         }
 
@@ -54,25 +55,26 @@ namespace Util
 
                 stream.Write(StringBitConverter.GetBytes(Name, sizeof(char) * 128), 0, sizeof(char) * 128);
 
-                double x = canvas.Dispatcher.Invoke(new Func<double>(() => canvas.Width));
-                double y = canvas.Dispatcher.Invoke(new Func<double>(() => canvas.Height));
+                double x = MainCanvas.Dispatcher.Invoke(new Func<double>(() => MainCanvas.Width));
+                double y = MainCanvas.Dispatcher.Invoke(new Func<double>(() => MainCanvas.Height));
                 stream.Write(BitConverter.GetBytes(x), 0, sizeof(double));
                 stream.Write(BitConverter.GetBytes(y), 0, sizeof(double));
             }
         }
 
-        public void SendWholeCanvas()
+        public void AskForWholeCanvas()
         {
             lock (stream)
             {
-                stream.WriteByte(Commands.CS_SEND_WHOLE_CANVAS);
-                Stream strokesStream = new MemoryStream();
-                canvas.Dispatcher.Invoke(new Action(() => canvas.Strokes.Save(strokesStream)));
-                stream.Write(BitConverter.GetBytes(strokesStream.Length), 0, sizeof(long));
-                byte[] temp = new byte[strokesStream.Length];
-                strokesStream.Seek(0, SeekOrigin.Begin);
-                strokesStream.Read(temp, 0, (int)strokesStream.Length);
-                stream.Write(temp, 0, temp.Length);
+                stream.WriteByte(Commands.SC_SEND_WHOLE_CANVAS);
+                
+                byte[] arrayLengthBytes = new byte[sizeof(int)];
+                stream.Read(arrayLengthBytes, 0, arrayLengthBytes.Length);
+                int arrayLength = BitConverter.ToInt32(arrayLengthBytes, 0);
+                byte[] canvasBytes = new byte[arrayLength];
+                stream.Read(canvasBytes, 0, canvasBytes.Length);
+                MainCanvas.Strokes.Clear();
+                signedStrokes.Load(canvasBytes);
             }
         }
 
@@ -122,7 +124,7 @@ namespace Util
             // C = client
             // CS = client to server
 
-            public const byte CS_SEND_WHOLE_CANVAS = 0;
+            public const byte SC_SEND_WHOLE_CANVAS = 0;
             public const byte CS_SEND_STROKE = 2;
             public const byte CS_REMOVE_STROKE = 69;
             public const byte CS_SEND_OBJECT = 3;

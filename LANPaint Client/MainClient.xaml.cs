@@ -20,7 +20,7 @@ namespace LANPaint_Client
     /// </summary>
     public partial class MainClient : Window
     {
-        Painter painter;
+        Client painter;
 
         public MainClient()
         {
@@ -28,7 +28,7 @@ namespace LANPaint_Client
 
             Random rnd = new Random();
 
-            painter = new Painter(mainCanvas, "Penis" + rnd.Next());
+            painter = new Client(mainCanvas, "Penis" + rnd.Next());
         }
 
         public void mainCanvas_SizeChanged(object sender, SizeChangedEventArgs e)

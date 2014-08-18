@@ -45,12 +45,18 @@ namespace Util
 
         public static bool operator !=(SignedStroke first, SignedStroke second)
         {
-            return first.GetIdentifier() != second.GetIdentifier();
+            return !(first == second);
         }
 
         public override bool Equals(object obj)
         {
-            return this == (SignedStroke)obj;
+            if (obj is SignedStroke)
+                return this == (SignedStroke)obj;
+            else
+            {
+                Log.Warning(String.Format("Compared {0} with SignedStroke", obj.GetType()));
+                return false;
+            }
         }
 
         public bool IsBase(Stroke stroke)

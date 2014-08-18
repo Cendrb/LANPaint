@@ -20,12 +20,12 @@ namespace LANPaint_Server
     /// </summary>
     public partial class MainServer : Window
     {
-        ServerPainterManager manager;
+        Server manager;
         public MainServer()
         {
             InitializeComponent();
 
-            manager = new ServerPainterManager(mainCanvas, "Superserver penis");
+            manager = new Server(mainCanvas, "Superserver penis", clientsListBox.Items);
 
             manager.StartAsync();
 
@@ -37,7 +37,8 @@ namespace LANPaint_Server
         public void mainCanvas_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             InkCanvas canvas = sender as InkCanvas;
-            Width = canvas.Width + Margin.Left + Margin.Right;
+            double canvasPartWidth = canvas.Width + Margin.Left + Margin.Right;
+            Width = canvasPartWidth + canvasPartWidth / 3;
             Height = canvas.Height + Margin.Top + Margin.Bottom;
         }
     }

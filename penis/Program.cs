@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Ink;
 using System.Windows.Input;
+using Util;
 
 namespace penis
 {
@@ -12,11 +14,46 @@ namespace penis
     {
         static void Main(string[] args)
         {
+            SignedStroke falus = null;
+            StylusPointCollection porn = new StylusPointCollection();
+            porn.Add(new StylusPoint(69, 69));
+            SignedStroke dildus = new SignedStroke(porn);
+
+            bool dildo = dildus != null;
+
+            String gay = "dan";
+
+            Task.Factory.StartNew(new Action(() => fap(gay)));
+            Task.Factory.StartNew(new Action(() => paf(gay)));
+
             Console.WriteLine("penis".GetHashCode());
             Console.WriteLine("penis".GetHashCode());
             Console.WriteLine("peniss".GetHashCode());
             Console.ReadKey();
         }
+
+        private static void fap(string gay)
+        {
+            lock(gay)
+            {
+                Console.WriteLine(gay);
+                Console.WriteLine("fap begin");
+                Thread.Sleep(3000);
+                Console.WriteLine("fap end");
+            }
+        }
+
+        private static void paf(string gay)
+        {
+            lock (gay)
+            {
+                Console.WriteLine(gay);
+                Console.WriteLine("paf begin");
+                Thread.Sleep(3000);
+                Console.WriteLine("paf end");
+            }
+        }
+
 
         static bool Penis<T>(T fap, T paf)
         {

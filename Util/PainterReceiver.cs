@@ -18,9 +18,10 @@ namespace Util
         public event Action<SignedStroke> StrokeRemoved = delegate { };
 
         TcpClient remote;
-        InkCanvas canvas;
         NetworkStream remoteStream;
         SignedStrokeCollection signedStrokes;
+
+        public InkCanvas MainCanvas { get; private set; }
 
         public string Name { get; private set; }
 
@@ -30,7 +31,7 @@ namespace Util
         public PainterReceiver(TcpClient remote, InkCanvas canvas, SignedStrokeCollection collection)
         {
             signedStrokes = collection;
-            this.canvas = canvas;
+            this.MainCanvas = canvas;
             if (remote == null || !remote.Connected)
                 throw new ApplicationException("Passed client is not connected");
             this.remote = remote;
@@ -47,37 +48,41 @@ namespace Util
 
         private void listener()
         {
-            while (remote.Connected)
+            try
             {
-                byte[] command = new byte[1];
-                remoteStream.Read(command, 0, 1);
-                switch (command[0])
+                Thread.CurrentThread.Name = "Receiver thread for " + Name;
+                while (remote.Connected)
                 {
-                    case PainterSender.Commands.CS_SEND_WHOLE_CANVAS:
-                        receiveWholeCanvas();
-                        break;
-                    case PainterSender.Commands.CS_SEND_STROKE:
-                        receiveStrokeAndAddToCanvas();
-                        break;
-                    case PainterSender.Commands.CS_REMOVE_STROKE:
-                        receiveIdAndRemoveStroke();
-                        break;
-                    case PainterSender.Commands.C_DISCONNECT:
-                        disconnect();
-                        break;
+                    byte[] command = new byte[1];
+                    remoteStream.Read(command, 0, 1);
+                    switch (command[0])
+                    {
+                        case PainterSender.Commands.SC_SEND_WHOLE_CANVAS:
+                            sendWholeCanvas();
+                            break;
+                        case PainterSender.Commands.CS_SEND_STROKE:
+                            receiveStrokeAndAddToCanvas();
+                            break;
+                        case PainterSender.Commands.CS_REMOVE_STROKE:
+                            receiveIdAndRemoveStroke();
+                            break;
+                        case PainterSender.Commands.C_DISCONNECT:
+                            disconnect();
+                            break;
+                    }
                 }
+            }
+            catch(IOException e)
+            {
+                Log.Error(e);
             }
         }
 
-        private void receiveWholeCanvas()
+        private void sendWholeCanvas()
         {
-            byte[] arrayLengthBytes = new byte[sizeof(long)];
-            remoteStream.Read(arrayLengthBytes, 0, arrayLengthBytes.Length);
-            long arrayLength = BitConverter.ToInt64(arrayLengthBytes, 0);
-            byte[] canvasBytes = new byte[arrayLength];
-            remoteStream.Read(canvasBytes, 0, canvasBytes.Length);
-            StrokeCollection strokes = new StrokeCollection(new MemoryStream(canvasBytes));
-            canvas.Dispatcher.Invoke(new Action(() => canvas.Strokes = strokes));
+            byte[] data = signedStrokes.Save();
+            remoteStream.Write(BitConverter.GetBytes(data.Length), 0, sizeof(int));
+            remoteStream.Write(data, 0, data.Length);
         }
 
         private void getNameFromRemote()
@@ -115,7 +120,7 @@ namespace Util
 
         private SignedStroke removeStrokeWithId(long id)
         {
-            StrokeCollection strokes = canvas.Dispatcher.Invoke(new Func<StrokeCollection>(() => canvas.Strokes));
+            StrokeCollection strokes = MainCanvas.Dispatcher.Invoke(new Func<StrokeCollection>(() => MainCanvas.Strokes));
             List<SignedStroke> strokesToRemove = (from stroke in strokes.ToArray()
                                                   where ((SignedStroke)stroke).GetIdentifier() == id
                                                   select stroke as SignedStroke).ToList();
@@ -153,6 +158,11 @@ namespace Util
             {
                 Log.Error(e);
             }
+        }
+
+        public void Disconnect()
+        {
+            disconnect();
         }
     }
 }
