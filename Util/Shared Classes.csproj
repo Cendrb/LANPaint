@@ -29,12 +29,14 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Windows" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -62,12 +64,18 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ByteBits.cs" />
     <Compile Include="ConsoleManager.cs" />
     <Compile Include="Exceptions.cs" />
+    <Compile Include="IdGenerator.cs" />
+    <Compile Include="LanCanvas.cs" />
     <Compile Include="Log.cs" />
+    <Compile Include="Painter.cs" />
     <Compile Include="PainterReceiver.cs" />
     <Compile Include="PainterSender.cs" />
+    <Compile Include="PermissionsData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SignedPointerStroke.cs" />
     <Compile Include="SignedStroke.cs" />
     <Compile Include="SignedStrokeCollection.cs" />
     <Compile Include="StaticPenises.cs" />
@@ -76,6 +84,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SharedWindows\SharedWindows.csproj">
+      <Project>{91fd6712-54d5-4adb-8dd2-f4c422772b2a}</Project>
+      <Name>SharedWindows</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

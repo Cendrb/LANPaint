@@ -14,7 +14,7 @@ namespace LANPaint_Server
         public void Add(PainterClient item)
         {
             if (clients.Contains(item))
-                throw new NameDuplicateException("Collection already contains client named " + item.Receiver.Name);
+                throw new NameDuplicateException("Collection already contains client named " + item.PainterPenis.RemoteName);
             else
                 clients.Add(item);
         }
@@ -49,10 +49,10 @@ namespace LANPaint_Server
             return clients.Remove(item);
         }
 
-        public PainterClient Remove(PainterReceiver item)
+        public PainterClient Remove(Painter item)
         {
             foreach (PainterClient painter in clients.ToArray())
-                if (painter.Receiver.Name == item.Name)
+                if (painter.PainterPenis.RemoteName == item.RemoteName)
                 {
                     clients.Remove(painter);
                     return painter;

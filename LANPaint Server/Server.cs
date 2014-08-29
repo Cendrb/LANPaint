@@ -18,31 +18,22 @@ namespace LANPaint_Server
     {
         public string Name { get; private set; }
         PainterClientCollection clients;
-        SignedStrokeCollection signedStrokes;
         public bool Listening { get; private set; }
-        TcpListener listener;
         public InkCanvas MainCanvas { get; private set; }
         ItemCollection connectedClientsView;
+        LanCanvas lanCanvas;
 
         public Server(InkCanvas canvas, string name, ItemCollection connectedClients)
         {
-            ConsoleManager.Show();
+            //ConsoleManager.Show();
+
+            MainCanvas = canvas;
+
+            lanCanvas = new LanCanvas(canvas, new IdGenerator(), name, PermissionsData.Default);
 
             this.connectedClientsView = connectedClients;
             Name = name;
             clients = new PainterClientCollection();
-            listener = new TcpListener(IPAddress.Any, StaticPenises.CS_PORT);
-            MainCanvas = canvas;
-            signedStrokes = new SignedStrokeCollection();
-            signedStrokes.StrokeAdded += (penis) => MainCanvas.Dispatcher.Invoke(new Action(() => MainCanvas.Strokes.Add(penis)));
-            signedStrokes.StrokeRemoved += (penis) => MainCanvas.Dispatcher.Invoke(new Action(() => MainCanvas.Strokes.Remove(penis)));
-            StylusPointCollection demoPoints = new StylusPointCollection();
-            demoPoints.Add(new StylusPoint(0, 0));
-            demoPoints.Add(new StylusPoint(69, 23));
-            SignedStroke stroke = new SignedStroke(demoPoints);
-            stroke.Id = 69;
-            stroke.Owner = "Template";
-            signedStrokes.Add(stroke);
         }
 
         public void StartAsync()
@@ -50,62 +41,79 @@ namespace LANPaint_Server
             Task.Factory.StartNew(new Action(Start));
         }
 
-        public void Start()
+        private void Start()
         {
             Thread.CurrentThread.Name = "New client register";
-            listener.Start();
             Listening = true;
             while (Listening)
             {
-                TcpClient client = listener.AcceptTcpClient();
-                PainterReceiver receiver = new PainterReceiver(client, MainCanvas, signedStrokes);
-                PainterSender sender = new PainterSender(MainCanvas, Name, signedStrokes);
-                PainterClient painter = new PainterClient(receiver, sender, PermissionType.ReadEdit, 69);
+                Painter painter = new Painter(lanCanvas, Name);
+                painter.Listen(IPAddress.Any, StaticPenises.SC_PORT, StaticPenises.CS_PORT);
+                PainterClient client = new PainterClient(painter, MainCanvas.Dispatcher);
                 try
                 {
-                    clients.Add(painter);
-                    MainCanvas.Dispatcher.BeginInvoke(new Action(() => connectedClientsView.Add(painter.ControlComponent)));
-                    IPEndPoint remote = (IPEndPoint)client.Client.RemoteEndPoint;
-                    painter.Sender.Connect(remote.Address, StaticPenises.SC_PORT);
-                    painter.Receiver.Disconnected += Receiver_Disconnected;
-                    painter.Receiver.StrokeReceived += (stroke) => sendStrokeToAllClientsBut(stroke, painter);
-                    painter.Receiver.StrokeRemoved += (stroke) => removeStrokeInAllClientsBut(stroke, painter);
+                    clients.Add(client);
+                    MainCanvas.Dispatcher.BeginInvoke(new Action(() => connectedClientsView.Add(client.ControlComponent)));
+                    painter.Disconnected += painter_Disconnected;
+                    painter.ReceiverHandle.StrokeReceived += (stroke) => sendStrokeToAllClientsBut(stroke, client);
+                    painter.ReceiverHandle.StrokeRemoved += (stroke) => removeStrokeInAllClientsBut(stroke, client);
+                    painter.ReceiverHandle.PointerStrokeReceived += (pointer) => sendPointerStrokeToAllClientsBut(pointer, client);
+                    painter.ReceiverHandle.StrokesWiped += () => wipeAllClientsStrokesBut(client);
+                    painter.ReceiverHandle.ObjectsWiped += () => wipeAllClientsObjectsBut(client);
                 }
                 catch (NameDuplicateException e)
                 {
                     Log.Error(e);
-                    painter.Sender.SendDisconnect();
-                    client.Close();
+                    painter.Disconnect();
                 }
             }
+        }
+
+        private void painter_Disconnected(Painter obj)
+        {
+            PainterClient client = clients.Remove(obj);
+            MainCanvas.Dispatcher.BeginInvoke(new Action(() => connectedClientsView.Remove(client.ControlComponent)));
+            Log.Debug(String.Format("Client {0} disconnected", obj.RemoteName));
+        }
+
+        private void wipeAllClientsObjectsBut(PainterClient but)
+        {
+            foreach (PainterClient client in clients)
+                if (client != but)
+                    client.PainterPenis.ServerHandle.WipeObjects();
+        }
+
+        private void wipeAllClientsStrokesBut(PainterClient but)
+        {
+            foreach (PainterClient client in clients)
+                if (client != but)
+                    client.PainterPenis.ServerHandle.WipeStrokes();
+        }
+
+        private void sendPointerStrokeToAllClientsBut(SignedPointerStroke pointer, PainterClient but)
+        {
+            foreach (PainterClient client in clients)
+                if (client != but)
+                    client.PainterPenis.ServerHandle.SendPointerStroke(pointer);
         }
 
         private void sendStrokeToAllClientsBut(SignedStroke stroke, PainterClient but)
         {
             foreach (PainterClient client in clients)
                 if (client != but)
-                    Task.Factory.StartNew(new Action(() => client.Sender.SendStroke(stroke)));
+                    client.PainterPenis.ServerHandle.SendSignedStroke(stroke);
         }
 
         private void removeStrokeInAllClientsBut(SignedStroke stroke, PainterClient but)
         {
             foreach (PainterClient client in clients)
                 if (client != but)
-                    Task.Factory.StartNew(new Action(() => client.Sender.RemoveStroke(stroke)));
-        }
-
-        private void Receiver_Disconnected(PainterReceiver obj)
-        {
-            PainterClient client = clients.Remove(obj);
-            client.Sender.Disconnect();
-            MainCanvas.Dispatcher.BeginInvoke(new Action(() => connectedClientsView.Remove(client.ControlComponent)));
-            Log.Debug(String.Format("Client {0} disconnected", obj.Name));
+                    client.PainterPenis.ServerHandle.RemoveSignedStroke(stroke);
         }
 
         public void Stop()
         {
             Listening = false;
-            listener.Stop();
         }
     }
 }

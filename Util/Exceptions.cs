@@ -16,4 +16,14 @@ namespace Util
             Name = name;
         }
     }
+
+    public class InsufficientPermissionsException : Exception
+    {
+        public PermissionType PermissionType { get; private set; }
+
+        public InsufficientPermissionsException(PermissionType type)
+        {
+            PermissionType = type;
+        }
+    }
 }

@@ -16,19 +16,16 @@ namespace Util
         public SignedStroke(StylusPointCollection points)
             : base(points)
         {
-
         }
 
         public SignedStroke(StylusPointCollection points, DrawingAttributes attr)
             : base(points, attr)
         {
-
         }
 
         public SignedStroke(Stroke stroke)
             : base(stroke.StylusPoints, stroke.DrawingAttributes)
         {
-
         }
 
         public long GetIdentifier()
@@ -53,15 +50,7 @@ namespace Util
             if (obj is SignedStroke)
                 return this == (SignedStroke)obj;
             else
-            {
-                Log.Warning(String.Format("Compared {0} with SignedStroke", obj.GetType()));
                 return false;
-            }
-        }
-
-        public bool IsBase(Stroke stroke)
-        {
-            return stroke.DrawingAttributes == DrawingAttributes && stroke.StylusPoints == StylusPoints;
         }
     }
 }

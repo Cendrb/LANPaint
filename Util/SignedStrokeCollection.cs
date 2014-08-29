@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Ink;
 
 namespace Util
-{
+{/*
     public class SignedStrokeCollection : ICollection<SignedStroke>
     {
         public const long DIVIDER = -1414454545644;
@@ -17,6 +17,33 @@ namespace Util
         public event Action<SignedStroke> StrokeAdded = delegate { };
         public event Action<SignedStroke> StrokeRemoved = delegate { };
 
+        public SignedStrokeCollection(IdGenerator generator)
+        {
+            this.generator = generator;
+        }
+
+        /// <summary>
+        /// Generates signed stroke and adds it to inner collection
+        /// </summary>
+        /// <param name="item">Original stroke</param>
+        /// <param name="ownerName">Owner of stroke</param>
+        /// <returns>Generated signed stroke</returns>
+        public SignedStroke AddAsSigned(Stroke item, string ownerName)
+        {
+            SignedStroke signed = generateSigned(item, ownerName);
+            signedStrokes.Add(signed);
+            StrokeAdded(signed);
+            return signed;
+        }
+
+        private SignedStroke generateSigned(Stroke original, string ownerName)
+        {
+            SignedStroke signed = new SignedStroke(original);
+            signed.Id = generator.GetNextId();
+            signed.Owner = ownerName;
+            return signed;
+        }
+
         public void Add(SignedStroke item)
         {
             signedStrokes.Add(item);
@@ -26,7 +53,8 @@ namespace Util
         public void Add(SignedStroke item, bool invokeEvent)
         {
             signedStrokes.Add(item);
-            if (invokeEvent)
+
+            if(invokeEvent)
                 StrokeAdded(item);
         }
 
@@ -40,15 +68,7 @@ namespace Util
             return signedStrokes.Contains(item);
         }
 
-        public bool Contains(Stroke item)
-        {
-            foreach (SignedStroke signed in signedStrokes)
-                if (signed.IsBase(item))
-                    return true;
-            return false;
-        }
-
-        public void Load(byte[] data)
+        public void Deserialize(IEnumerable<byte> data)
         {
             Clear();
             byte[][] strokes = StaticPenises.Divide<byte>(data, DIVIDER_BYTES);
@@ -56,12 +76,12 @@ namespace Util
             {
                 if (stroke.Length > 0)
                 {
-                    Add(StrokeBitConverter.GetStroke(stroke));
+                    Add(StrokeBitConverter.GetSignedStroke(stroke));
                 }
             }
         }
 
-        public byte[] Save()
+        public byte[] Serialize()
         {
             List<byte> datalist = new List<byte>();
             foreach (SignedStroke stroke in signedStrokes)
@@ -70,17 +90,6 @@ namespace Util
                 datalist.AddRange(StrokeBitConverter.GetBytes(stroke));
             }
             return datalist.ToArray();
-        }
-
-        public SignedStroke GetSignedWithBase(Stroke item)
-        {
-            lock (signedStrokes)
-            {
-                foreach (SignedStroke signed in signedStrokes)
-                    if (signed.IsBase(item))
-                        return signed;
-            }
-            return null;
         }
 
         public void CopyTo(SignedStroke[] array, int arrayIndex)
@@ -111,43 +120,14 @@ namespace Util
             return signedStrokes.Remove(item);
         }
 
-        public bool Remove(Stroke item)
-        {
-            foreach (SignedStroke signed in signedStrokes.ToList())
-            {
-                if (signed.IsBase(item))
-                {
-                    signedStrokes.Remove(signed);
-                    StrokeRemoved(signed);
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public bool Remove(Stroke item, bool invokeEvent)
-        {
-            foreach (SignedStroke signed in signedStrokes.ToList())
-            {
-                if (signed.IsBase(item))
-                {
-                    signedStrokes.Remove(signed);
-                    if (invokeEvent)
-                        StrokeRemoved(signed);
-                    return true;
-                }
-            }
-            return false;
-        }
-
         public IEnumerator<SignedStroke> GetEnumerator()
         {
-            throw new NotImplementedException();
+            return signedStrokes.GetEnumerator();
         }
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
             throw new NotImplementedException();
         }
-    }
+    }*/
 }

@@ -6,13 +6,15 @@ using System.Threading.Tasks;
 
 namespace Util
 {
-    public enum PermissionType { ReadEdit, Read}
-    public class StaticPenises
+    public enum LanCanvasEditingMode { None, Ink, Eraser, Knife, Printer, Pointer }
+    public enum PermissionType { ManipulateOwnLines, ManipulateOtherLines, ManipulateOwnObjects, ManipulateOtherObjects, WipeLines, WipeObjects}
+
+    public static class StaticPenises
     {
         public const int CS_PORT = 3333;
         public const int SC_PORT = 3334;
 
-        public static T[][] Divide<T>(IEnumerable<T> source, IEnumerable<T> divider)
+        public static T[][] Divide<T>(this IEnumerable<T> source, IEnumerable<T> divider)
         {
             T[] sourceArray = source.ToArray();
             T[] dividerArray = divider.ToArray();

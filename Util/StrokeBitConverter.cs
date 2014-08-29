@@ -13,11 +13,19 @@ namespace Util
     {
         public const int OWNER_NAME_BYTES_ARRAY_LENGTH = 128;
 
-        public const int COLOR_BYTES_ARRAY_LENGTH = 4;
+        public static SignedPointerStroke GetSignedPointerStroke(byte[] bytes)
+        {
+            SignedStroke signed = GetSignedStroke(bytes.Skip(sizeof(int) * 2).ToArray());
 
-        public const int ATTRIBUTES_BYTES_ARRAY_LENGTH = COLOR_BYTES_ARRAY_LENGTH + sizeof(bool) + sizeof(double) + sizeof(double);
+            int stayTime = BitConverter.ToInt32(bytes, 0);
+            int fadeTime = BitConverter.ToInt32(bytes, sizeof(int));
 
-        public static SignedStroke GetStroke(byte[] bytes)
+            SignedPointerStroke stroke = new SignedPointerStroke(signed, stayTime, fadeTime);
+
+            return stroke;
+        }
+
+        public static SignedStroke GetSignedStroke(byte[] bytes)
         {
             StylusPointCollection points = new StylusPointCollection();
             DrawingAttributes attributes = null;
@@ -30,8 +38,8 @@ namespace Util
             byte[] idBytes = listBytes.Take(sizeof(UInt32)).ToArray();
             listBytes.RemoveRange(0, sizeof(UInt32));
 
-            attributes = GetDrawingAttributes(listBytes.Take(21).ToArray());
-            listBytes.RemoveRange(0, 21);
+            attributes = GetDrawingAttributes(listBytes.Take(22).ToArray());
+            listBytes.RemoveRange(0, 22);
 
             byte[] pointsBytes = listBytes.ToArray();
             for (int x = 0; x < pointsBytes.Length; x += 16)
@@ -56,6 +64,10 @@ namespace Util
             attributes.FitToCurve = BitConverter.ToBoolean(bytes, 4);
             attributes.Width = BitConverter.ToDouble(bytes, 5);
             attributes.Height = BitConverter.ToDouble(bytes, 13);
+            if (bytes[21] == 0)
+                attributes.StylusTip = StylusTip.Ellipse;
+            else
+                attributes.StylusTip = StylusTip.Rectangle;
 
             return attributes;
         }
@@ -68,6 +80,19 @@ namespace Util
             color.B = bytes[2 + startindex];
             color.A = bytes[3 + startindex];
             return color;
+        }
+
+        public static byte[] GetBytes(SignedPointerStroke stroke)
+        {
+            List<byte> bytes = new List<byte>();
+
+            bytes.AddRange(BitConverter.GetBytes(stroke.StayTime));
+
+            bytes.AddRange(BitConverter.GetBytes(stroke.FadeTime));
+
+            bytes.AddRange(GetBytes(stroke as SignedStroke));
+
+            return bytes.ToArray();
         }
 
         public static byte[] GetBytes(SignedStroke stroke)
@@ -96,6 +121,12 @@ namespace Util
             bytes.AddRange(BitConverter.GetBytes(attributes.FitToCurve));
             bytes.AddRange(BitConverter.GetBytes(attributes.Width));
             bytes.AddRange(BitConverter.GetBytes(attributes.Height));
+            byte stylusShape;
+            if(attributes.StylusTip == StylusTip.Ellipse)
+                stylusShape = 0;
+            else
+                stylusShape = 1;
+            bytes.Add(stylusShape);
             return bytes.ToArray();
         }
 

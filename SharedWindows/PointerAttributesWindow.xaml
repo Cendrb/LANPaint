@@ -1,0 +1,18 @@
+﻿<Window x:Class="SharedWindows.PointerAttributesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ext="clr-namespace:Xceed.Wpf.Toolkit;assembly=Xceed.Wpf.Toolkit"
+        Title="Pointer stroke properties" Height="146" Width="300" ResizeMode="NoResize">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <ext:IntegerUpDown x:Name="stayTime" Margin="126,10,10,0" Grid.ColumnSpan="2" Height="26" VerticalAlignment="Top"/>
+        <Label Content="Stroke stay time" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,10,0,0"/>
+        <Label Content="Stroke fade time" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,41,0,0"/>
+        <ext:IntegerUpDown x:Name="fadeTime" Margin="126,41,10,0" Grid.ColumnSpan="2" Height="26" VerticalAlignment="Top"/>
+        <Button x:Name="brushProperties" Content="Brush properties..." HorizontalAlignment="Left" Margin="5,80,0,0" VerticalAlignment="Top" Width="128" Height="24" Grid.Column="1" Click="brushProperties_Click"/>
+        <Button x:Name="save" Content="Save" Margin="10,80,5,0" VerticalAlignment="Top" Height="24" Click="save_Click"/>
+    </Grid>
+</Window>

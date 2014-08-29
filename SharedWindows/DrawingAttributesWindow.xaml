@@ -1,0 +1,28 @@
+﻿<Window x:Class="SharedWindows.DrawingAttributesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ext="clr-namespace:Xceed.Wpf.Toolkit;assembly=Xceed.Wpf.Toolkit"
+        Title="Brush settings" Height="538" Width="300" ResizeMode="NoResize">
+    <Grid>
+        <Label Content="Brush width" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,10,0,0"/>
+        <Label Content="Brush height" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,36,0,0"/>
+        <ext:DoubleUpDown x:Name="brushWidth" Margin="144,15,10,0" Height="21" VerticalAlignment="Top" Minimum="0.1"/>
+        <ext:DoubleUpDown x:Name="brushHeight" Margin="144,41,10,0" Height="21" VerticalAlignment="Top" Minimum="0.1"/>
+        <RadioButton x:Name="ellipseShape" Content="Ellipse" HorizontalAlignment="Left" Margin="19,115,0,0" VerticalAlignment="Top"/>
+        <Label Content="Brush shape" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,89,0,0" RenderTransformOrigin="0.605,1"/>
+        <RadioButton x:Name="rectangleShape" Content="Rectangle" HorizontalAlignment="Left" Margin="19,136,0,0" VerticalAlignment="Top"/>
+        <CheckBox x:Name="fitToCurve" Content="Fit drawn strokes to curve" HorizontalAlignment="Left" Margin="10,68,0,0" VerticalAlignment="Top"/>
+        <Label Content="Brush color" HorizontalAlignment="Left" Margin="10,157,0,0" VerticalAlignment="Top"/>
+        <ext:ColorCanvas x:Name="colorSelector" Margin="10,188,10,0" RenderTransformOrigin="0.5,0.5" Height="258" VerticalAlignment="Top">
+            <ext:ColorCanvas.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform/>
+                    <SkewTransform AngleX="-0.412"/>
+                    <RotateTransform/>
+                    <TranslateTransform X="-0.493"/>
+                </TransformGroup>
+            </ext:ColorCanvas.RenderTransform>
+        </ext:ColorCanvas>
+        <Button x:Name="saveButton" Content="Save" Margin="10,461,10,10" RenderTransformOrigin="-0.28,0.364" Click="saveButton_Click"/>
+    </Grid>
+</Window>

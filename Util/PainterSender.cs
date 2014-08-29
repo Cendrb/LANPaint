@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -19,10 +20,10 @@ namespace Util
 
         TcpClient client;
         NetworkStream stream;
-        SignedStrokeCollection signedStrokes;
-        public string Name { get; private set; }
+        public string LocalName { get; private set; }
+        public ServerHandle Handle { get; private set; }
 
-        public InkCanvas MainCanvas { get; private set; }
+        LanCanvas lanCanvas;
 
         public bool Connected
         {
@@ -32,11 +33,11 @@ namespace Util
             }
         }
 
-        public PainterSender(InkCanvas canvas, string name, SignedStrokeCollection collection)
+        public PainterSender(LanCanvas lanCanvas, string name)
         {
-            signedStrokes = collection;
-            this.MainCanvas = canvas;
-            Name = name;
+            this.lanCanvas = lanCanvas;
+            LocalName = name;
+            Handle = new ServerHandle(this);
         }
 
         public void ConnectAsync(IPAddress address, int port)
@@ -53,12 +54,7 @@ namespace Util
 
                 stream = client.GetStream();
 
-                stream.Write(StringBitConverter.GetBytes(Name, sizeof(char) * 128), 0, sizeof(char) * 128);
-
-                double x = MainCanvas.Dispatcher.Invoke(new Func<double>(() => MainCanvas.Width));
-                double y = MainCanvas.Dispatcher.Invoke(new Func<double>(() => MainCanvas.Height));
-                stream.Write(BitConverter.GetBytes(x), 0, sizeof(double));
-                stream.Write(BitConverter.GetBytes(y), 0, sizeof(double));
+                stream.Write(StringBitConverter.GetBytes(LocalName, sizeof(char) * 128), 0, sizeof(char) * 128);
             }
         }
 
@@ -67,17 +63,49 @@ namespace Util
             lock (stream)
             {
                 stream.WriteByte(Commands.SC_SEND_WHOLE_CANVAS);
-                
+
                 byte[] arrayLengthBytes = new byte[sizeof(int)];
                 stream.Read(arrayLengthBytes, 0, arrayLengthBytes.Length);
                 int arrayLength = BitConverter.ToInt32(arrayLengthBytes, 0);
                 byte[] canvasBytes = new byte[arrayLength];
                 stream.Read(canvasBytes, 0, canvasBytes.Length);
-                MainCanvas.Strokes.Clear();
-                signedStrokes.Load(canvasBytes);
+                lanCanvas.Deserialize(canvasBytes);
             }
         }
 
+        public void SendPermissions(PermissionsData data)
+        {
+            stream.WriteByte(Commands.CS_SEND_PERMISSIONS);
+            stream.WriteByte(data.Serialize());
+        }
+
+        public void WipeStrokes()
+        {
+            lock (stream)
+            {
+                stream.WriteByte(Commands.C_S_WIPE_STROKES);
+            }
+        }
+
+
+        public void WipeObjects()
+        {
+            lock(stream)
+            {
+                stream.WriteByte(Commands.C_S_WIPE_OBJECTS);
+            }
+        }
+
+        public void SendPointerStroke(SignedPointerStroke pointer)
+        {
+            lock(stream)
+            {
+                stream.WriteByte(Commands.CS_SEND_POINTER);
+                byte[] bytes = StrokeBitConverter.GetBytes(pointer);
+                stream.Write(BitConverter.GetBytes(bytes.Length), 0, sizeof(int));
+                stream.Write(bytes, 0, bytes.Length);
+            }
+        }
 
         public void SendStroke(SignedStroke stroke)
         {
@@ -118,6 +146,41 @@ namespace Util
             Disconnected(this);
         }
 
+        public class ServerHandle
+        {
+            private PainterSender painterSender;
+
+            public ServerHandle(PainterSender painterSender)
+            {
+                this.painterSender = painterSender;
+            }
+
+            public void SendSignedStroke(SignedStroke signed)
+            {
+                painterSender.SendStroke(signed);
+            }
+             
+            public void SendPointerStroke(SignedPointerStroke pointer)
+            {
+                painterSender.SendPointerStroke(pointer);
+            }
+
+            public void RemoveSignedStroke(SignedStroke signed)
+            {
+                painterSender.RemoveStroke(signed);
+            }
+
+            public void WipeStrokes()
+            {
+                painterSender.WipeStrokes();
+            }
+
+            public void WipeObjects()
+            {
+                painterSender.WipeObjects();
+            }
+        }
+
         public static class Commands
         {
             // S = server
@@ -125,10 +188,14 @@ namespace Util
             // CS = client to server
 
             public const byte SC_SEND_WHOLE_CANVAS = 0;
+            public const byte C_S_WIPE_STROKES = 6;
+            public const byte C_S_WIPE_OBJECTS = 7;
+            public const byte CS_SEND_POINTER = 8;
             public const byte CS_SEND_STROKE = 2;
             public const byte CS_REMOVE_STROKE = 69;
             public const byte CS_SEND_OBJECT = 3;
             public const byte CS_REMOVE_OBJECT = 4;
+            public const byte CS_SEND_PERMISSIONS = 23;
             public const byte C_DISCONNECT = 255;
         }
     }

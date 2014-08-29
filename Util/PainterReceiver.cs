@@ -14,31 +14,33 @@ namespace Util
     public class PainterReceiver
     {
         public event Action<PainterReceiver> Disconnected = delegate { };
-        public event Action<SignedStroke> StrokeReceived = delegate { };
-        public event Action<SignedStroke> StrokeRemoved = delegate { };
+
+        event Action<SignedStroke> StrokeReceived = delegate { };
+        event Action<SignedStroke> StrokeRemoved = delegate { };
+        event Action<SignedPointerStroke> PointerStrokeReceived = delegate { };
+        event Action StrokesWiped = delegate { };
+        event Action ObjectsWiped = delegate { };
 
         TcpClient remote;
         NetworkStream remoteStream;
-        SignedStrokeCollection signedStrokes;
+        LanCanvas lanCanvas;
 
-        public InkCanvas MainCanvas { get; private set; }
+        public ReceiverHandle Handle { get; private set; }
+        public PermissionsData Permissions { get; private set; }
+        public string RemoteName { get; private set; }
 
-        public string Name { get; private set; }
-
-        public double XCanvasSize { get; private set; }
-        public double YCanvasSize { get; private set; }
-
-        public PainterReceiver(TcpClient remote, InkCanvas canvas, SignedStrokeCollection collection)
+        public PainterReceiver(TcpClient remote, LanCanvas lanCanvas)
         {
-            signedStrokes = collection;
-            this.MainCanvas = canvas;
+            this.lanCanvas = lanCanvas;
+            Permissions = lanCanvas.Permissions;
             if (remote == null || !remote.Connected)
                 throw new ApplicationException("Passed client is not connected");
             this.remote = remote;
             remoteStream = remote.GetStream();
             getNameFromRemote();
-            getCanvasSizeFromRemote();
             startListeningForCommands();
+
+            Handle = new ReceiverHandle(this);
         }
 
         private void startListeningForCommands()
@@ -50,13 +52,25 @@ namespace Util
         {
             try
             {
-                Thread.CurrentThread.Name = "Receiver thread for " + Name;
+                Thread.CurrentThread.Name = "Receiver thread for " + RemoteName;
                 while (remote.Connected)
                 {
                     byte[] command = new byte[1];
                     remoteStream.Read(command, 0, 1);
                     switch (command[0])
                     {
+                        case PainterSender.Commands.CS_SEND_POINTER:
+                            receivePointerAndAddToCanvas();
+                            break;
+                        case PainterSender.Commands.CS_SEND_PERMISSIONS:
+                            receiveAndApplyPermissions();
+                            break;
+                        case PainterSender.Commands.C_S_WIPE_STROKES:
+                            wipeStrokes();
+                            break;
+                        case PainterSender.Commands.C_S_WIPE_OBJECTS:
+                            wipeObjects();
+                            break;
                         case PainterSender.Commands.SC_SEND_WHOLE_CANVAS:
                             sendWholeCanvas();
                             break;
@@ -72,15 +86,35 @@ namespace Util
                     }
                 }
             }
-            catch(IOException e)
+            catch (IOException e)
             {
                 Log.Error(e);
             }
         }
 
+        private void wipeObjects()
+        {
+            lanCanvas.ManualHandler.WipeObjects();
+            ObjectsWiped();
+        }
+
+        private void receiveAndApplyPermissions()
+        {
+            byte[] permissions = new byte[1];
+            remoteStream.Read(permissions, 0, 1);
+            Permissions.Deserialize(permissions[0]);
+            lanCanvas.UpdatePermissions();
+        }
+
+        private void wipeStrokes()
+        {
+            lanCanvas.ManualHandler.WipeStrokes();
+            StrokesWiped();
+        }
+
         private void sendWholeCanvas()
         {
-            byte[] data = signedStrokes.Save();
+            byte[] data = lanCanvas.Serialize();
             remoteStream.Write(BitConverter.GetBytes(data.Length), 0, sizeof(int));
             remoteStream.Write(data, 0, data.Length);
         }
@@ -89,18 +123,7 @@ namespace Util
         {
             byte[] nameBuffer = new byte[sizeof(char) * 128];
             remoteStream.Read(nameBuffer, 0, nameBuffer.Length);
-            Name = StringBitConverter.GetString(nameBuffer).Replace("\0", "");
-        }
-
-        private void getCanvasSizeFromRemote()
-        {
-            byte[] xBuffer = new byte[sizeof(double)];
-            remoteStream.Read(xBuffer, 0, xBuffer.Length);
-            XCanvasSize = BitConverter.ToDouble(xBuffer, 0);
-
-            byte[] yBuffer = new byte[sizeof(double)];
-            remoteStream.Read(yBuffer, 0, yBuffer.Length);
-            YCanvasSize = BitConverter.ToDouble(yBuffer, 0);
+            RemoteName = StringBitConverter.GetString(nameBuffer).Replace("\0", "");
         }
 
         private void receiveIdAndRemoveStroke()
@@ -108,35 +131,29 @@ namespace Util
             byte[] idBuffer = new byte[sizeof(long)];
             remoteStream.Read(idBuffer, 0, idBuffer.Length);
             long id = BitConverter.ToInt64(idBuffer, 0);
-            try
-            {
-                StrokeRemoved(removeStrokeWithId(id));
-            }
-            catch (Exception e)
-            {
-                Log.Error(e);
-            }
-        }
 
-        private SignedStroke removeStrokeWithId(long id)
-        {
-            StrokeCollection strokes = MainCanvas.Dispatcher.Invoke(new Func<StrokeCollection>(() => MainCanvas.Strokes));
-            List<SignedStroke> strokesToRemove = (from stroke in strokes.ToArray()
-                                                  where ((SignedStroke)stroke).GetIdentifier() == id
-                                                  select stroke as SignedStroke).ToList();
-            if (strokesToRemove.Count() > 1)
-                throw new ApplicationException(String.Format("Found two strokes with same id {0}", id));
-            if (strokesToRemove.Count() > 0)
-                signedStrokes.Remove(strokesToRemove.First());
-            else
-                throw new ApplicationException(String.Format("No strokes with specified id {0} were found", id));
-            return strokesToRemove.First();
+            SignedStroke removedStroke = lanCanvas.ManualHandler.RemoveSignedStrokeWithId(id);
+            StrokeRemoved(removedStroke);
         }
 
         private void disconnect()
         {
             Disconnected(this);
             remote.Close();
+        }
+
+        private void receivePointerAndAddToCanvas()
+        {
+            // gets size
+            byte[] sizeBuffer = new byte[sizeof(int)];
+            remoteStream.Read(sizeBuffer, 0, sizeBuffer.Length);
+            int size = BitConverter.ToInt32(sizeBuffer, 0);
+
+            byte[] bytes = new byte[size];
+            remoteStream.Read(bytes, 0, bytes.Length);
+            SignedPointerStroke stroke = StrokeBitConverter.GetSignedPointerStroke(bytes);
+            lanCanvas.ManualHandler.AddSignedPointerStroke(stroke);
+            PointerStrokeReceived(stroke);
         }
 
         private void receiveStrokeAndAddToCanvas()
@@ -148,21 +165,36 @@ namespace Util
 
             byte[] bytes = new byte[size];
             remoteStream.Read(bytes, 0, bytes.Length);
-            try
-            {
-                SignedStroke stroke = StrokeBitConverter.GetStroke(bytes);
-                signedStrokes.Add(stroke);
-                StrokeReceived(stroke);
-            }
-            catch (Exception e)
-            {
-                Log.Error(e);
-            }
+            SignedStroke stroke = StrokeBitConverter.GetSignedStroke(bytes);
+            lanCanvas.ManualHandler.AddSignedStroke(stroke);
+            StrokeReceived(stroke);
         }
 
         public void Disconnect()
         {
             disconnect();
+        }
+
+        /// <summary>
+        /// Provides events invoked by PainterReceiver
+        /// </summary>
+        public class ReceiverHandle
+        {
+
+            public event Action<SignedStroke> StrokeReceived = delegate { };
+            public event Action<SignedStroke> StrokeRemoved = delegate { };
+            public event Action<SignedPointerStroke> PointerStrokeReceived = delegate { };
+            public event Action StrokesWiped = delegate { };
+            public event Action ObjectsWiped = delegate { };
+
+            public ReceiverHandle(PainterReceiver receiver)
+            {
+                receiver.StrokeReceived += (stroke) => StrokeReceived(stroke);
+                receiver.StrokeRemoved += (stroke) => StrokeRemoved(stroke);
+                receiver.PointerStrokeReceived += (pointer) => PointerStrokeReceived(pointer);
+                receiver.StrokesWiped += () => StrokesWiped();
+                receiver.ObjectsWiped += () => ObjectsWiped();
+            }
         }
     }
 }
