@@ -62,6 +62,7 @@ namespace Util
         {
             lock (stream)
             {
+                sendBeginByte();
                 stream.WriteByte(Commands.SC_SEND_WHOLE_CANVAS);
 
                 byte[] arrayLengthBytes = new byte[sizeof(int)];
@@ -75,14 +76,19 @@ namespace Util
 
         public void SendPermissions(PermissionsData data)
         {
-            stream.WriteByte(Commands.CS_SEND_PERMISSIONS);
-            stream.WriteByte(data.Serialize());
+            lock (stream)
+            {
+                sendBeginByte();
+                stream.WriteByte(Commands.CS_SEND_PERMISSIONS);
+                stream.WriteByte(data.Serialize());
+            }
         }
 
         public void WipeStrokes()
         {
             lock (stream)
             {
+                sendBeginByte();
                 stream.WriteByte(Commands.C_S_WIPE_STROKES);
             }
         }
@@ -90,16 +96,18 @@ namespace Util
 
         public void WipeObjects()
         {
-            lock(stream)
+            lock (stream)
             {
+                sendBeginByte();
                 stream.WriteByte(Commands.C_S_WIPE_OBJECTS);
             }
         }
 
         public void SendPointerStroke(SignedPointerStroke pointer)
         {
-            lock(stream)
+            lock (stream)
             {
+                sendBeginByte();
                 stream.WriteByte(Commands.CS_SEND_POINTER);
                 byte[] bytes = StrokeBitConverter.GetBytes(pointer);
                 stream.Write(BitConverter.GetBytes(bytes.Length), 0, sizeof(int));
@@ -111,6 +119,7 @@ namespace Util
         {
             lock (stream)
             {
+                sendBeginByte();
                 stream.WriteByte(Commands.CS_SEND_STROKE);
                 byte[] bytes = StrokeBitConverter.GetBytes(stroke);
                 stream.Write(BitConverter.GetBytes(bytes.Length), 0, sizeof(int));
@@ -122,6 +131,7 @@ namespace Util
         {
             lock (stream)
             {
+                sendBeginByte();
                 stream.WriteByte(Commands.CS_REMOVE_STROKE);
                 stream.Write(BitConverter.GetBytes(stroke.GetIdentifier()), 0, sizeof(long));
             }
@@ -133,6 +143,7 @@ namespace Util
             {
                 if (Connected)
                 {
+                    sendBeginByte();
                     stream.WriteByte(Commands.C_DISCONNECT);
                     Disconnect();
                 }
@@ -144,6 +155,11 @@ namespace Util
             lock (stream)
                 client.Close();
             Disconnected(this);
+        }
+
+        private void sendBeginByte()
+        {
+            stream.WriteByte(Commands.BEGIN_BYTE);
         }
 
         public class ServerHandle
@@ -159,7 +175,7 @@ namespace Util
             {
                 painterSender.SendStroke(signed);
             }
-             
+
             public void SendPointerStroke(SignedPointerStroke pointer)
             {
                 painterSender.SendPointerStroke(pointer);
@@ -187,9 +203,11 @@ namespace Util
             // C = client
             // CS = client to server
 
-            public const byte SC_SEND_WHOLE_CANVAS = 0;
-            public const byte C_S_WIPE_STROKES = 6;
-            public const byte C_S_WIPE_OBJECTS = 7;
+            public const byte BEGIN_BYTE = 250;
+
+            public const byte SC_SEND_WHOLE_CANVAS = 169;
+            public const byte C_S_WIPE_STROKES = 58;
+            public const byte C_S_WIPE_OBJECTS = 59;
             public const byte CS_SEND_POINTER = 8;
             public const byte CS_SEND_STROKE = 2;
             public const byte CS_REMOVE_STROKE = 69;

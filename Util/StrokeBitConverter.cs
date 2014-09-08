@@ -12,6 +12,9 @@ namespace Util
     public static class StrokeBitConverter
     {
         public const int OWNER_NAME_BYTES_ARRAY_LENGTH = 128;
+        public const int DRAWING_ATTRIBUTES_BYTES_ARRAY_LENGTH = COLOR_BYTES_ARRAY_LENGTH + sizeof(bool) + sizeof(double) + sizeof(double) + 1;
+        public const int COLOR_BYTES_ARRAY_LENGTH = 4;
+            
 
         public static SignedPointerStroke GetSignedPointerStroke(byte[] bytes)
         {
@@ -32,23 +35,20 @@ namespace Util
 
             List<byte> listBytes = new List<byte>(bytes);
 
+            int takenBytes = 0;
+
             byte[] ownerBytes = listBytes.Take(OWNER_NAME_BYTES_ARRAY_LENGTH).ToArray();
-            listBytes.RemoveRange(0, OWNER_NAME_BYTES_ARRAY_LENGTH);
+            takenBytes += OWNER_NAME_BYTES_ARRAY_LENGTH;
 
-            byte[] idBytes = listBytes.Take(sizeof(UInt32)).ToArray();
-            listBytes.RemoveRange(0, sizeof(UInt32));
+            byte[] idBytes = listBytes.Skip(takenBytes).Take(sizeof(UInt32)).ToArray();
+            takenBytes += sizeof(UInt32);
 
-            attributes = GetDrawingAttributes(listBytes.Take(22).ToArray());
-            listBytes.RemoveRange(0, 22);
+            attributes = GetDrawingAttributes(listBytes.Skip(takenBytes).Take(DRAWING_ATTRIBUTES_BYTES_ARRAY_LENGTH).ToArray());
+            takenBytes += DRAWING_ATTRIBUTES_BYTES_ARRAY_LENGTH;
 
-            byte[] pointsBytes = listBytes.ToArray();
+            byte[] pointsBytes = listBytes.Skip(takenBytes).ToArray();
             for (int x = 0; x < pointsBytes.Length; x += 16)
-            {
-                double xCoor = BitConverter.ToDouble(pointsBytes, x);
-                double yCoor = BitConverter.ToDouble(pointsBytes, x + 8);
-
-                points.Add(new StylusPoint(xCoor, yCoor));
-            }
+                GetPoint(pointsBytes, x);
             SignedStroke stroke = new SignedStroke(points, attributes);
             stroke.Owner = StringBitConverter.GetString(ownerBytes).Replace("\0", "");
             stroke.Id = BitConverter.ToUInt32(idBytes, 0);
@@ -80,6 +80,14 @@ namespace Util
             color.B = bytes[2 + startindex];
             color.A = bytes[3 + startindex];
             return color;
+        }
+
+        public static StylusPoint GetPoint(byte[] bytes, int startIndex)
+        {
+            double x = BitConverter.ToDouble(bytes, 0 + startIndex);
+            double y = BitConverter.ToDouble(bytes, 8 + startIndex);
+
+            return new StylusPoint(x, y);
         }
 
         public static byte[] GetBytes(SignedPointerStroke stroke)

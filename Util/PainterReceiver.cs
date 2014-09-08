@@ -55,35 +55,45 @@ namespace Util
                 Thread.CurrentThread.Name = "Receiver thread for " + RemoteName;
                 while (remote.Connected)
                 {
-                    byte[] command = new byte[1];
-                    remoteStream.Read(command, 0, 1);
-                    switch (command[0])
+                    byte[] begin = new byte[1];
+                    remoteStream.Read(begin, 0, 1);
+                    if (begin[0] == PainterSender.Commands.BEGIN_BYTE)
                     {
-                        case PainterSender.Commands.CS_SEND_POINTER:
-                            receivePointerAndAddToCanvas();
-                            break;
-                        case PainterSender.Commands.CS_SEND_PERMISSIONS:
-                            receiveAndApplyPermissions();
-                            break;
-                        case PainterSender.Commands.C_S_WIPE_STROKES:
-                            wipeStrokes();
-                            break;
-                        case PainterSender.Commands.C_S_WIPE_OBJECTS:
-                            wipeObjects();
-                            break;
-                        case PainterSender.Commands.SC_SEND_WHOLE_CANVAS:
-                            sendWholeCanvas();
-                            break;
-                        case PainterSender.Commands.CS_SEND_STROKE:
-                            receiveStrokeAndAddToCanvas();
-                            break;
-                        case PainterSender.Commands.CS_REMOVE_STROKE:
-                            receiveIdAndRemoveStroke();
-                            break;
-                        case PainterSender.Commands.C_DISCONNECT:
-                            disconnect();
-                            break;
+                        byte[] command = new byte[1];
+                        remoteStream.Read(command, 0, 1);
+                        switch (command[0])
+                        {
+                            case PainterSender.Commands.CS_SEND_POINTER:
+                                receivePointerAndAddToCanvas();
+                                break;
+                            case PainterSender.Commands.CS_SEND_PERMISSIONS:
+                                receiveAndApplyPermissions();
+                                break;
+                            case PainterSender.Commands.C_S_WIPE_STROKES:
+                                wipeStrokes();
+                                break;
+                            case PainterSender.Commands.C_S_WIPE_OBJECTS:
+                                wipeObjects();
+                                break;
+                            case PainterSender.Commands.SC_SEND_WHOLE_CANVAS:
+                                sendWholeCanvas();
+                                break;
+                            case PainterSender.Commands.CS_SEND_STROKE:
+                                receiveStrokeAndAddToCanvas();
+                                break;
+                            case PainterSender.Commands.CS_REMOVE_STROKE:
+                                receiveIdAndRemoveStroke();
+                                break;
+                            case PainterSender.Commands.C_DISCONNECT:
+                                disconnect();
+                                break;
+                            default:
+                                Log.Warning("Unknown command received");
+                                break;
+                        }
                     }
+                    else
+                        Log.Warning("Unknown begin command received");
                 }
             }
             catch (IOException e)

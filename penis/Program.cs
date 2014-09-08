@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,22 +16,27 @@ namespace penis
     {
         static void Main(string[] args)
         {
-            SignedStroke falus = null;
-            StylusPointCollection porn = new StylusPointCollection();
-            porn.Add(new StylusPoint(69, 69));
-            SignedStroke dildus = new SignedStroke(porn);
+            Task.Factory.StartNew(new Action(client));
+            Task.Factory.StartNew(new Action(server));
 
-            bool dildo = dildus != null;
-
-            String gay = "dan";
-
-            Task.Factory.StartNew(new Action(() => fap(gay)));
-            Task.Factory.StartNew(new Action(() => paf(gay)));
-
-            Console.WriteLine("penis".GetHashCode());
-            Console.WriteLine("penis".GetHashCode());
-            Console.WriteLine("peniss".GetHashCode());
             Console.ReadKey();
+        }
+
+        private static void client()
+        {
+            TcpClient client = new TcpClient();
+            client.Connect(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 5156));
+            byte[] dan = new byte[100];
+            client.Client.Receive(dan);
+        }
+
+        private static void server()
+        {
+            TcpListener listener = new TcpListener(IPAddress.Any, 5156);
+            listener.Start();
+            TcpClient remote = listener.AcceptTcpClient();
+            listener.Stop();
+            remote.Client.Send(BitConverter.GetBytes(69));
         }
 
         private static void fap(string gay)
