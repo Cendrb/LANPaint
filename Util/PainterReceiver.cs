@@ -56,7 +56,7 @@ namespace Util
                 while (remote.Connected)
                 {
                     byte[] begin = new byte[1];
-                    remoteStream.Read(begin, 0, 1);
+                    remote.Client.Receive(begin);
                     if (begin[0] == PainterSender.Commands.BEGIN_BYTE)
                     {
                         byte[] command = new byte[1];

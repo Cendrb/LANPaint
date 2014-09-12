@@ -48,7 +48,7 @@ namespace Util
 
             byte[] pointsBytes = listBytes.Skip(takenBytes).ToArray();
             for (int x = 0; x < pointsBytes.Length; x += 16)
-                GetPoint(pointsBytes, x);
+                points.Add(GetPoint(pointsBytes, x));
             SignedStroke stroke = new SignedStroke(points, attributes);
             stroke.Owner = StringBitConverter.GetString(ownerBytes).Replace("\0", "");
             stroke.Id = BitConverter.ToUInt32(idBytes, 0);
