@@ -1,0 +1,91 @@
+[33mcommit 945d3d30bd94e6a73c3cd6151632f737aa0019b6[m
+Author: Cendrb <cendrb@gmail.com>
+Date:   Sat Sep 13 22:37:08 2014 +0200
+
+    Revert "Started separating SignedStroke parts"
+    
+    This reverts commit 9552b60f04624d08253e83f57e49fa087e55ec61.
+    
+    Trying to repair the damage done
+
+[33mcommit 7596372aac7fbcb2d2874a31e8ac230f1f617d4c[m
+Author: Cendrb <cendrb@gmail.com>
+Date:   Sat Sep 13 22:33:44 2014 +0200
+
+    Revert "big balast!"
+    
+    This reverts commit 19a2d8ffed23b8cf2b712d98bab5e71fe890ae91.
+
+[33mcommit daf2cef833a4111a825ab31e55f394e54862a981[m
+Author: Cendrb <cendrb@gmail.com>
+Date:   Sat Sep 13 22:33:39 2014 +0200
+
+    Revert "fap"
+    
+    This reverts commit cb1979115bfc091fbe35c55e3c106a84044d8fce.
+
+[33mcommit cb1979115bfc091fbe35c55e3c106a84044d8fce[m
+Author: Cendrb <cendrb@gmail.com>
+Date:   Sat Sep 13 22:33:33 2014 +0200
+
+    fap
+
+[33mcommit 19a2d8ffed23b8cf2b712d98bab5e71fe890ae91[m
+Author: Cendrb <cendrb@gmail.com>
+Date:   Fri Sep 12 23:34:10 2014 +0200
+
+    big balast!
+
+[33mcommit 9552b60f04624d08253e83f57e49fa087e55ec61[m
+Author: Cendrb <cendrb@gmail.com>
+Date:   Fri Sep 12 22:53:58 2014 +0200
+
+    Started separating SignedStroke parts
+    
+    attributes
+    signed data
+    points
+
+[33mcommit 21b35b7327b961c1ac2e5414c7c7849093570838[m
+Author: Cendrb <cendrb@gmail.com>
+Date:   Fri Sep 12 15:13:35 2014 +0200
+
+    still not owrking
+    
+    packets larger than 1450 are corrupted
+
+[33mcommit 8cd3e89751278720239daa16093a6d5061e543e8[m
+Author: Cendrb <cendrb@gmail.com>
+Date:   Mon Sep 8 18:51:16 2014 +0200
+
+    whoa
+
+[33mcommit 25393a3f11480495f9fe16b7406a1e0931190c6c[m
+Author: Cendrb <cendrb@gmail.com>
+Date:   Fri Aug 29 18:27:23 2014 +0200
+
+    huuuuge update
+
+[33mcommit 3e92d80aa60a59eb4cf5bb6feae231a5c322ca47[m
+Author: Cendrb <cendrb@gmail.com>
+Date:   Mon Aug 18 20:32:25 2014 +0200
+
+    before strokes unification
+
+[33mcommit efbedb499cf448001fb30d9767aed35809ce093f[m
+Author: Cendrb <cendrb@gmail.com>
+Date:   Mon Aug 18 00:24:31 2014 +0200
+
+    pyj
+
+[33mcommit 1606b6aa71da2d266d3560b700bfacef6c403548[m
+Author: Cendrb <cendrb@gmail.com>
+Date:   Sun Aug 17 22:19:37 2014 +0200
+
+    fap
+
+[33mcommit 281bec0f5097c2ebe97c2c05ee5ddcdad993bb69[m
+Author: Cendrb <cendrb@gmail.com>
+Date:   Sun Aug 17 22:19:26 2014 +0200
+
+    Initial commit to add default .gitIgnore and .gitAttribute files.

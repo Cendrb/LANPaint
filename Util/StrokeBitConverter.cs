@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,55 +17,61 @@ namespace Util
         public const int COLOR_BYTES_ARRAY_LENGTH = 4;
             
 
-        public static SignedPointerStroke GetSignedPointerStroke(byte[] bytes)
+        public static SignedPointerStroke GetSignedPointerStroke(Stream source)
         {
-            SignedStroke signed = GetSignedStroke(bytes.Skip(sizeof(int) * 2).ToArray());
+            SignedStroke signed = GetSignedStroke(source);
 
-            int stayTime = BitConverter.ToInt32(bytes, 0);
-            int fadeTime = BitConverter.ToInt32(bytes, sizeof(int));
+            byte[] stayTimeBytes = new byte[sizeof(Int32)];
+            source.Read(stayTimeBytes, 0, stayTimeBytes.Length);
+            int stayTime = BitConverter.ToInt32(stayTimeBytes, 0);
+
+            byte[] fadeTimeBytes = new byte[sizeof(Int32)];
+            source.Read(fadeTimeBytes, 0, fadeTimeBytes.Length);
+            int fadeTime = BitConverter.ToInt32(stayTimeBytes, 0);
 
             SignedPointerStroke stroke = new SignedPointerStroke(signed, stayTime, fadeTime);
 
             return stroke;
         }
 
-        public static SignedStroke GetSignedStroke(byte[] bytes)
+        public static SignedStroke GetSignedStroke(Stream source)
         {
+            byte[] ownerBytes = new byte[OWNER_NAME_BYTES_ARRAY_LENGTH];
+            source.Read(ownerBytes, 0, ownerBytes.Length);
+
+            byte[] idBytes = new byte[sizeof(UInt32)];
+            source.Read(idBytes, 0, idBytes.Length);
+
+            DrawingAttributes attributes = GetDrawingAttributes(source);
+
             StylusPointCollection points = new StylusPointCollection();
-            DrawingAttributes attributes = null;
 
-            List<byte> listBytes = new List<byte>(bytes);
+            byte[] numberOfPointsBytes = new byte[sizeof(UInt32)];
+            source.Read(numberOfPointsBytes, 0, numberOfPointsBytes.Length);
+            uint numberOfPoints = BitConverter.ToUInt32(numberOfPointsBytes, 0);
 
-            int takenBytes = 0;
-
-            byte[] ownerBytes = listBytes.Take(OWNER_NAME_BYTES_ARRAY_LENGTH).ToArray();
-            takenBytes += OWNER_NAME_BYTES_ARRAY_LENGTH;
-
-            byte[] idBytes = listBytes.Skip(takenBytes).Take(sizeof(UInt32)).ToArray();
-            takenBytes += sizeof(UInt32);
-
-            attributes = GetDrawingAttributes(listBytes.Skip(takenBytes).Take(DRAWING_ATTRIBUTES_BYTES_ARRAY_LENGTH).ToArray());
-            takenBytes += DRAWING_ATTRIBUTES_BYTES_ARRAY_LENGTH;
-
-            byte[] pointsBytes = listBytes.Skip(takenBytes).ToArray();
-            for (int x = 0; x < pointsBytes.Length; x += 16)
-                points.Add(GetPoint(pointsBytes, x));
+            for (uint x = numberOfPoints; x != 0; x--)
+                points.Add(GetPoint(source));
             SignedStroke stroke = new SignedStroke(points, attributes);
             stroke.Owner = StringBitConverter.GetString(ownerBytes).Replace("\0", "");
             stroke.Id = BitConverter.ToUInt32(idBytes, 0);
             return stroke;
         }
 
-        public static DrawingAttributes GetDrawingAttributes(byte[] bytes)
+        public static DrawingAttributes GetDrawingAttributes(Stream source)
         {
             DrawingAttributes attributes = new DrawingAttributes();
 
             // set color
-            attributes.Color = GetColor(bytes, 0);
-            attributes.FitToCurve = BitConverter.ToBoolean(bytes, 4);
-            attributes.Width = BitConverter.ToDouble(bytes, 5);
-            attributes.Height = BitConverter.ToDouble(bytes, 13);
-            if (bytes[21] == 0)
+            attributes.Color = GetColor(source);
+
+            byte[] attributeBytes = new byte[18];
+            source.Read(attributeBytes, 0, attributeBytes.Length);
+
+            attributes.FitToCurve = BitConverter.ToBoolean(attributeBytes, 0);
+            attributes.Width = BitConverter.ToDouble(attributeBytes, 1);
+            attributes.Height = BitConverter.ToDouble(attributeBytes, 9);
+            if (attributeBytes[17] == 0)
                 attributes.StylusTip = StylusTip.Ellipse;
             else
                 attributes.StylusTip = StylusTip.Rectangle;
@@ -72,20 +79,29 @@ namespace Util
             return attributes;
         }
 
-        public static Color GetColor(byte[] bytes, int startindex)
+        public static Color GetColor(Stream source)
         {
+            byte[] colorBytes = new byte[4];
+
+            source.Read(colorBytes, 0, colorBytes.Length);
+
             Color color = new Color();
-            color.R = bytes[0 + startindex];
-            color.G = bytes[1 + startindex];
-            color.B = bytes[2 + startindex];
-            color.A = bytes[3 + startindex];
+            color.R = colorBytes[0];
+            color.G = colorBytes[1];
+            color.B = colorBytes[2];
+            color.A = colorBytes[3];
             return color;
         }
 
-        public static StylusPoint GetPoint(byte[] bytes, int startIndex)
+        public static StylusPoint GetPoint(Stream source)
         {
-            double x = BitConverter.ToDouble(bytes, 0 + startIndex);
-            double y = BitConverter.ToDouble(bytes, 8 + startIndex);
+            byte[] doubleBytes = new byte[sizeof(double)];
+
+            source.Read(doubleBytes, 0, doubleBytes.Length);
+            double x = BitConverter.ToDouble(doubleBytes, 0);
+
+            source.Read(doubleBytes, 0, doubleBytes.Length);
+            double y = BitConverter.ToDouble(doubleBytes, 0);
 
             return new StylusPoint(x, y);
         }
