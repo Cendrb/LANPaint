@@ -12,6 +12,9 @@ namespace Util
 {
     public static class StrokeBitConverter
     {
+        public const byte SIGNED_STROKE_SIGNAL = 0;
+        public const byte SIGNED_POINTER_STROKE_SIGNAL = 1;
+
         public const int OWNER_NAME_BYTES_ARRAY_LENGTH = 128;
         public const int DRAWING_ATTRIBUTES_BYTES_ARRAY_LENGTH = COLOR_BYTES_ARRAY_LENGTH + sizeof(bool) + sizeof(double) + sizeof(double) + 1;
         public const int COLOR_BYTES_ARRAY_LENGTH = 4;

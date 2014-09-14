@@ -10,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using SharedWindows;
+using System.IO;
 
 namespace Util
 {
@@ -206,7 +207,7 @@ namespace Util
 
         private void openToolMenu()
         {
-            switch(EditingMode)
+            switch (EditingMode)
             {
                 case LanCanvasEditingMode.Ink:
                     openAttributesMenu(DefaultDrawingAttributes);
@@ -225,7 +226,7 @@ namespace Util
 
         private void openStylusShapeMenu()
         {
-            
+
         }
 
         private void openAttributesMenu(DrawingAttributes attr)
@@ -296,39 +297,45 @@ namespace Util
         }
 
         /// <summary>
-        /// Converts all data from associated canvas to array of bytes
+        /// Converts all the data from canvas to the given stream
         /// </summary>
-        /// <returns>Serialized canvas</returns>
-        public byte[] Serialize()
+        /// <param name="target">Target stream for the serialized data</param>
+        public void Serialize(Stream target)
         {
-            List<byte> data = new List<byte>();
-            data.AddRange(BitConverter.GetBytes(generator.ActiveId));
-            data.AddRange(BitConverter.GetBytes(Width));
-            data.AddRange(BitConverter.GetBytes(Height));
+            target.Write(BitConverter.GetBytes(generator.ActiveId), 0, sizeof(UInt32));
+            target.Write(BitConverter.GetBytes(Width), 0, sizeof(double));
+            target.Write(BitConverter.GetBytes(Height), 0, sizeof(double));
             IEnumerator<Stroke> enumerator = canvas.Dispatcher.Invoke(new Func<IEnumerator<Stroke>>(() => canvas.Strokes.GetEnumerator()));
             while (enumerator.MoveNext())
             {
-                data.AddRange(StrokeBitConverter.Serialize((SignedStroke)enumerator.Current));
-                data.AddRange(DIVIDER_BYTES);
+                if (enumerator.Current is SignedPointerStroke)
+                    StrokeBitConverter.Serialize(target, (SignedPointerStroke)enumerator.Current);
+                else
+                    StrokeBitConverter.Serialize(target, (SignedStroke)enumerator.Current);
             }
-            return data.ToArray();
         }
         /// <summary>
-        /// Wipes all previous data and deserialises given array of bytes
+        /// Wipes all the previous data and loads them from the given stream
         /// </summary>
-        /// <param name="data">Data to deserialize</param>
-        public void Deserialize(byte[] data)
+        /// <param name="source">The data source</param>
+        public void Deserialize(Stream source)
         {
+            byte[] data = new byte[20];
+            source.Read(data, 0, data.Length);
+
             generator.ActiveId = BitConverter.ToUInt32(data, 0);
             Width = BitConverter.ToDouble(data, 4);
             Height = BitConverter.ToDouble(data, 12);
             canvas.Strokes.Clear();
-            byte[][] parts = data.Skip(20).Divide(DIVIDER_BYTES);
-            foreach (byte[] stroke in parts)
-                if (stroke.Length > 0)
-                {
-                    canvas.Strokes.Add(StrokeBitConverter.GetSignedStroke(stroke));
-                }
+
+            byte[] command = new byte[1];
+            source.Read(command, 0, command.Length);
+
+            byte[] strokeData = new byte[];
+            while (source.Read(strokeData, 0, strokeData.Length) > 0)
+            {
+
+            }
         }
 
         /// <summary>
