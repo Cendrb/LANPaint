@@ -15,8 +15,8 @@ namespace Util
         public const int OWNER_NAME_BYTES_ARRAY_LENGTH = 128;
         public const int DRAWING_ATTRIBUTES_BYTES_ARRAY_LENGTH = COLOR_BYTES_ARRAY_LENGTH + sizeof(bool) + sizeof(double) + sizeof(double) + 1;
         public const int COLOR_BYTES_ARRAY_LENGTH = 4;
-            
 
+        #region Deserialize
         public static SignedPointerStroke GetSignedPointerStroke(Stream source)
         {
             SignedStroke signed = GetSignedStroke(source);
@@ -105,43 +105,44 @@ namespace Util
 
             return new StylusPoint(x, y);
         }
+        #endregion
 
-        public static byte[] GetBytes(SignedPointerStroke stroke)
+        #region Serialize
+        public static void Serialize(Stream target, SignedPointerStroke stroke)
         {
-            List<byte> bytes = new List<byte>();
+            target.Write(BitConverter.GetBytes(stroke.StayTime), 0, sizeof(Int32));
 
-            bytes.AddRange(BitConverter.GetBytes(stroke.StayTime));
+            target.Write(BitConverter.GetBytes(stroke.FadeTime), 0, sizeof(Int32));
 
-            bytes.AddRange(BitConverter.GetBytes(stroke.FadeTime));
-
-            bytes.AddRange(GetBytes(stroke as SignedStroke));
-
-            return bytes.ToArray();
+            Serialize(target, stroke as SignedStroke);
         }
 
-        public static byte[] GetBytes(SignedStroke stroke)
+        public static void Serialize(Stream target, SignedStroke stroke)
         {
-            List<byte> bytes = new List<byte>();
+            byte[] ownerBytes = StringBitConverter.GetBytes(stroke.Owner, OWNER_NAME_BYTES_ARRAY_LENGTH);
+            target.Write(ownerBytes, 0, ownerBytes.Length);
 
-            bytes.AddRange(StringBitConverter.GetBytes(stroke.Owner, OWNER_NAME_BYTES_ARRAY_LENGTH));
+            target.Write(BitConverter.GetBytes(stroke.Id), 0, sizeof(Int32));
 
-            bytes.AddRange(BitConverter.GetBytes(stroke.Id));
-
-            bytes.AddRange(GetBytes(stroke.DrawingAttributes));
+            Serialize(target, stroke.DrawingAttributes);
 
             StylusPointCollection points = stroke.StylusPoints;
             foreach (StylusPoint point in points)
-            {
-                bytes.AddRange(BitConverter.GetBytes(point.X));
-                bytes.AddRange(BitConverter.GetBytes(point.Y));
-            }
-            return bytes.ToArray();
+                Serialize(target, point);
         }
 
-        public static byte[] GetBytes(DrawingAttributes attributes)
+        public static void Serialize(Stream target, StylusPoint point)
         {
+            target.Write(BitConverter.GetBytes(point.X), 0, sizeof(double));
+            target.Write(BitConverter.GetBytes(point.Y), 0, sizeof(double));
+        }
+
+        public static void Serialize(Stream target, DrawingAttributes attributes)
+        {
+            Serialize(target, attributes.Color);
+
             List<byte> bytes = new List<byte>();
-            bytes.AddRange(GetBytes(attributes.Color));
+
             bytes.AddRange(BitConverter.GetBytes(attributes.FitToCurve));
             bytes.AddRange(BitConverter.GetBytes(attributes.Width));
             bytes.AddRange(BitConverter.GetBytes(attributes.Height));
@@ -151,17 +152,19 @@ namespace Util
             else
                 stylusShape = 1;
             bytes.Add(stylusShape);
-            return bytes.ToArray();
+
+            target.Write(bytes.ToArray(), 0, bytes.Count);
         }
 
-        public static byte[] GetBytes(Color color)
+        public static void Serialize(Stream target, Color color)
         {
             byte[] bytes = new byte[4];
             bytes[0] = color.R;
             bytes[1] = color.G;
             bytes[2] = color.B;
             bytes[3] = color.A;
-            return bytes;
+            target.Write(bytes, 0, bytes.Length);
         }
+        #endregion
     }
 }

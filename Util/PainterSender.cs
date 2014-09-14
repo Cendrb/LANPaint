@@ -109,7 +109,7 @@ namespace Util
             {
                 sendBeginByte();
                 stream.WriteByte(Commands.CS_SEND_POINTER);
-                byte[] bytes = StrokeBitConverter.GetBytes(pointer);
+                byte[] bytes = StrokeBitConverter.Serialize(pointer);
                 stream.Write(BitConverter.GetBytes(bytes.Length), 0, sizeof(int));
                 stream.Write(bytes, 0, bytes.Length);
             }
@@ -121,7 +121,7 @@ namespace Util
             {
                 sendBeginByte();
                 stream.WriteByte(Commands.CS_SEND_STROKE);
-                byte[] bytes = StrokeBitConverter.GetBytes(stroke);
+                byte[] bytes = StrokeBitConverter.Serialize(stroke);
                 stream.Write(BitConverter.GetBytes(bytes.Length), 0, sizeof(int));
                 stream.Write(bytes, 0, bytes.Length);
             }

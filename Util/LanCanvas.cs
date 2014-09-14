@@ -308,7 +308,7 @@ namespace Util
             IEnumerator<Stroke> enumerator = canvas.Dispatcher.Invoke(new Func<IEnumerator<Stroke>>(() => canvas.Strokes.GetEnumerator()));
             while (enumerator.MoveNext())
             {
-                data.AddRange(StrokeBitConverter.GetBytes((SignedStroke)enumerator.Current));
+                data.AddRange(StrokeBitConverter.Serialize((SignedStroke)enumerator.Current));
                 data.AddRange(DIVIDER_BYTES);
             }
             return data.ToArray();
