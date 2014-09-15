@@ -309,9 +309,15 @@ namespace Util
             while (enumerator.MoveNext())
             {
                 if (enumerator.Current is SignedPointerStroke)
+                {
+                    target.WriteByte(StrokeBitConverter.SIGNED_POINTER_STROKE_SIGNAL);
                     StrokeBitConverter.Serialize(target, (SignedPointerStroke)enumerator.Current);
+                }
                 else
+                {
+                    target.WriteByte(StrokeBitConverter.SIGNED_STROKE_SIGNAL);
                     StrokeBitConverter.Serialize(target, (SignedStroke)enumerator.Current);
+                }
             }
         }
         /// <summary>
@@ -328,13 +334,24 @@ namespace Util
             Height = BitConverter.ToDouble(data, 12);
             canvas.Strokes.Clear();
 
+            bool end = false;
+
             byte[] command = new byte[1];
-            source.Read(command, 0, command.Length);
-
-            byte[] strokeData = new byte[];
-            while (source.Read(strokeData, 0, strokeData.Length) > 0)
+            while (source.Read(command, 0, command.Length) > 0 && !end)
             {
+                switch (command[0])
+                {
+                    case StrokeBitConverter.SIGNED_POINTER_STROKE_SIGNAL:
+                        canvas.Strokes.Add(StrokeBitConverter.GetSignedPointerStroke(source));
+                        break;
+                    case StrokeBitConverter.SIGNED_STROKE_SIGNAL:
+                        canvas.Strokes.Add(StrokeBitConverter.GetSignedStroke(source));
+                        break;
+                    default:
+                        Console.WriteLine("Unknown data command received");
+                        end = true;
 
+                }
             }
         }
 

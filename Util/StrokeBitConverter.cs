@@ -51,9 +51,9 @@ namespace Util
 
             byte[] numberOfPointsBytes = new byte[sizeof(UInt32)];
             source.Read(numberOfPointsBytes, 0, numberOfPointsBytes.Length);
-            uint numberOfPoints = BitConverter.ToUInt32(numberOfPointsBytes, 0);
+            int numberOfPoints = BitConverter.ToInt32(numberOfPointsBytes, 0);
 
-            for (uint x = numberOfPoints; x != 0; x--)
+            for (int x = numberOfPoints; x != 0; x--)
                 points.Add(GetPoint(source));
             SignedStroke stroke = new SignedStroke(points, attributes);
             stroke.Owner = StringBitConverter.GetString(ownerBytes).Replace("\0", "");
@@ -130,6 +130,9 @@ namespace Util
             Serialize(target, stroke.DrawingAttributes);
 
             StylusPointCollection points = stroke.StylusPoints;
+
+            target.Write(BitConverter.GetBytes(points.Count), 0, sizeof(Int32));
+
             foreach (StylusPoint point in points)
                 Serialize(target, point);
         }

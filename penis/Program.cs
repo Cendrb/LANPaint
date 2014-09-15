@@ -16,8 +16,18 @@ namespace penis
     {
         static void Main(string[] args)
         {
-            Task.Factory.StartNew(new Action(client));
-            Task.Factory.StartNew(new Action(server));
+            byte[] doublepenis = new byte[8];
+            doublepenis[0] = 255;
+            doublepenis[1] = 255;
+            doublepenis[2] = 255;
+            doublepenis[3] = 255;
+            doublepenis[4] = 255;
+            doublepenis[5] = 255;
+            doublepenis[6] = 255;
+            doublepenis[7] = 255;
+            double whoa = BitConverter.ToDouble(doublepenis, 0);
+
+            Console.WriteLine(whoa);
 
             Console.ReadKey();
         }
