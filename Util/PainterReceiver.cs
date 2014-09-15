@@ -124,9 +124,7 @@ namespace Util
 
         private void sendWholeCanvas()
         {
-            byte[] data = lanCanvas.Serialize();
-            remoteStream.Write(BitConverter.GetBytes(data.Length), 0, sizeof(int));
-            remoteStream.Write(data, 0, data.Length);
+            lanCanvas.Serialize(remoteStream);
         }
 
         private void getNameFromRemote()
@@ -154,28 +152,14 @@ namespace Util
 
         private void receivePointerAndAddToCanvas()
         {
-            // gets size
-            byte[] sizeBuffer = new byte[sizeof(int)];
-            remoteStream.Read(sizeBuffer, 0, sizeBuffer.Length);
-            int size = BitConverter.ToInt32(sizeBuffer, 0);
-
-            byte[] bytes = new byte[size];
-            remoteStream.Read(bytes, 0, bytes.Length);
-            SignedPointerStroke stroke = StrokeBitConverter.GetSignedPointerStroke(bytes);
+            SignedPointerStroke stroke = StrokeBitConverter.GetSignedPointerStroke(remoteStream);
             lanCanvas.ManualHandler.AddSignedPointerStroke(stroke);
             PointerStrokeReceived(stroke);
         }
 
         private void receiveStrokeAndAddToCanvas()
         {
-            // gets size
-            byte[] sizeBuffer = new byte[sizeof(int)];
-            remoteStream.Read(sizeBuffer, 0, sizeBuffer.Length);
-            int size = BitConverter.ToInt32(sizeBuffer, 0);
-
-            byte[] bytes = new byte[size];
-            remoteStream.Read(bytes, 0, bytes.Length);
-            SignedStroke stroke = StrokeBitConverter.GetSignedStroke(bytes);
+            SignedStroke stroke = StrokeBitConverter.GetSignedStroke(remoteStream);
             lanCanvas.ManualHandler.AddSignedStroke(stroke);
             StrokeReceived(stroke);
         }

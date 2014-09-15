@@ -64,13 +64,7 @@ namespace Util
             {
                 sendBeginByte();
                 stream.WriteByte(Commands.SC_SEND_WHOLE_CANVAS);
-
-                byte[] arrayLengthBytes = new byte[sizeof(int)];
-                stream.Read(arrayLengthBytes, 0, arrayLengthBytes.Length);
-                int arrayLength = BitConverter.ToInt32(arrayLengthBytes, 0);
-                byte[] canvasBytes = new byte[arrayLength];
-                stream.Read(canvasBytes, 0, canvasBytes.Length);
-                lanCanvas.Deserialize(canvasBytes);
+                lanCanvas.Deserialize(stream);
             }
         }
 
@@ -109,9 +103,7 @@ namespace Util
             {
                 sendBeginByte();
                 stream.WriteByte(Commands.CS_SEND_POINTER);
-                byte[] bytes = StrokeBitConverter.Serialize(pointer);
-                stream.Write(BitConverter.GetBytes(bytes.Length), 0, sizeof(int));
-                stream.Write(bytes, 0, bytes.Length);
+                StrokeBitConverter.Serialize(stream, pointer);
             }
         }
 
@@ -121,9 +113,7 @@ namespace Util
             {
                 sendBeginByte();
                 stream.WriteByte(Commands.CS_SEND_STROKE);
-                byte[] bytes = StrokeBitConverter.Serialize(stroke);
-                stream.Write(BitConverter.GetBytes(bytes.Length), 0, sizeof(int));
-                stream.Write(bytes, 0, bytes.Length);
+                StrokeBitConverter.Serialize(stream, stroke);
             }
         }
 

@@ -350,7 +350,7 @@ namespace Util
                     default:
                         Console.WriteLine("Unknown data command received");
                         end = true;
-
+                        break;
                 }
             }
         }
