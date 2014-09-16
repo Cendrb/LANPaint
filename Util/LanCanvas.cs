@@ -319,6 +319,7 @@ namespace Util
                     StrokeBitConverter.Serialize(target, (SignedStroke)enumerator.Current);
                 }
             }
+            target.WriteByte(StrokeBitConverter.STROKES_END);
         }
         /// <summary>
         /// Wipes all the previous data and loads them from the given stream
@@ -326,19 +327,26 @@ namespace Util
         /// <param name="source">The data source</param>
         public void Deserialize(Stream source)
         {
-            byte[] data = new byte[20];
-            source.Read(data, 0, data.Length);
+            byte[] idBytes = new byte[sizeof(UInt32)];
+            source.Read(idBytes, 0, idBytes.Length);
+            generator.ActiveId = BitConverter.ToUInt32(idBytes, 0);
 
-            generator.ActiveId = BitConverter.ToUInt32(data, 0);
-            Width = BitConverter.ToDouble(data, 4);
-            Height = BitConverter.ToDouble(data, 12);
+            byte[] widthBytes = new byte[sizeof(double)];
+            source.Read(widthBytes, 0, widthBytes.Length);
+            Width = BitConverter.ToDouble(widthBytes, 0);
+
+            byte[] heightBytes = new byte[sizeof(double)];
+            source.Read(heightBytes, 0, heightBytes.Length);
+            Height = BitConverter.ToDouble(heightBytes, 0);
+
             canvas.Strokes.Clear();
 
             bool end = false;
 
             byte[] command = new byte[1];
-            while (source.Read(command, 0, command.Length) > 0 && !end)
+            while (!end)
             {
+                source.Read(command, 0, command.Length);
                 switch (command[0])
                 {
                     case StrokeBitConverter.SIGNED_POINTER_STROKE_SIGNAL:
@@ -346,6 +354,9 @@ namespace Util
                         break;
                     case StrokeBitConverter.SIGNED_STROKE_SIGNAL:
                         canvas.Strokes.Add(StrokeBitConverter.GetSignedStroke(source));
+                        break;
+                    case StrokeBitConverter.STROKES_END:
+                        end = true;
                         break;
                     default:
                         Console.WriteLine("Unknown data command received");

@@ -14,6 +14,7 @@ namespace Util
     {
         public const byte SIGNED_STROKE_SIGNAL = 0;
         public const byte SIGNED_POINTER_STROKE_SIGNAL = 1;
+        public const byte STROKES_END = 69;
 
         public const int OWNER_NAME_BYTES_ARRAY_LENGTH = 128;
         public const int DRAWING_ATTRIBUTES_BYTES_ARRAY_LENGTH = COLOR_BYTES_ARRAY_LENGTH + sizeof(bool) + sizeof(double) + sizeof(double) + 1;
@@ -22,8 +23,6 @@ namespace Util
         #region Deserialize
         public static SignedPointerStroke GetSignedPointerStroke(Stream source)
         {
-            SignedStroke signed = GetSignedStroke(source);
-
             byte[] stayTimeBytes = new byte[sizeof(Int32)];
             source.Read(stayTimeBytes, 0, stayTimeBytes.Length);
             int stayTime = BitConverter.ToInt32(stayTimeBytes, 0);
@@ -31,6 +30,8 @@ namespace Util
             byte[] fadeTimeBytes = new byte[sizeof(Int32)];
             source.Read(fadeTimeBytes, 0, fadeTimeBytes.Length);
             int fadeTime = BitConverter.ToInt32(stayTimeBytes, 0);
+
+            SignedStroke signed = GetSignedStroke(source);
 
             SignedPointerStroke stroke = new SignedPointerStroke(signed, stayTime, fadeTime);
 
@@ -68,13 +69,21 @@ namespace Util
             // set color
             attributes.Color = GetColor(source);
 
-            byte[] attributeBytes = new byte[18];
-            source.Read(attributeBytes, 0, attributeBytes.Length);
+            byte[] fitToCurveBytes = new byte[sizeof(bool)];
+            source.Read(fitToCurveBytes, 0, fitToCurveBytes.Length);
+            attributes.FitToCurve = BitConverter.ToBoolean(fitToCurveBytes, 0);
 
-            attributes.FitToCurve = BitConverter.ToBoolean(attributeBytes, 0);
-            attributes.Width = BitConverter.ToDouble(attributeBytes, 1);
-            attributes.Height = BitConverter.ToDouble(attributeBytes, 9);
-            if (attributeBytes[17] == 0)
+            byte[] widthBytes = new byte[sizeof(double)];
+            source.Read(widthBytes, 0, widthBytes.Length);
+            attributes.Width = BitConverter.ToDouble(widthBytes,0);
+
+            byte[] heightBytes = new byte[sizeof(double)];
+            source.Read(heightBytes, 0, heightBytes.Length);
+            attributes.Height = BitConverter.ToDouble(heightBytes, 0);
+
+            byte[] stylusBytes = new byte[1];
+            source.Read(stylusBytes, 0, stylusBytes.Length);
+            if (stylusBytes[0] == 0)
                 attributes.StylusTip = StylusTip.Ellipse;
             else
                 attributes.StylusTip = StylusTip.Rectangle;
@@ -98,13 +107,13 @@ namespace Util
 
         public static StylusPoint GetPoint(Stream source)
         {
-            byte[] doubleBytes = new byte[sizeof(double)];
+            byte[] xBytes = new byte[sizeof(double)];
+            source.Read(xBytes, 0, xBytes.Length);
+            double x = BitConverter.ToDouble(xBytes, 0);
 
-            source.Read(doubleBytes, 0, doubleBytes.Length);
-            double x = BitConverter.ToDouble(doubleBytes, 0);
-
-            source.Read(doubleBytes, 0, doubleBytes.Length);
-            double y = BitConverter.ToDouble(doubleBytes, 0);
+            byte[] yBytes = new byte[sizeof(double)];
+            source.Read(yBytes, 0, yBytes.Length);
+            double y = BitConverter.ToDouble(yBytes, 0);
 
             return new StylusPoint(x, y);
         }
@@ -147,19 +156,16 @@ namespace Util
         {
             Serialize(target, attributes.Color);
 
-            List<byte> bytes = new List<byte>();
+            target.Write(BitConverter.GetBytes(attributes.FitToCurve), 0, sizeof(bool));
+            target.Write(BitConverter.GetBytes(attributes.Width), 0, sizeof(double));
+            target.Write(BitConverter.GetBytes(attributes.Height), 0, sizeof(double));
 
-            bytes.AddRange(BitConverter.GetBytes(attributes.FitToCurve));
-            bytes.AddRange(BitConverter.GetBytes(attributes.Width));
-            bytes.AddRange(BitConverter.GetBytes(attributes.Height));
             byte stylusShape;
             if(attributes.StylusTip == StylusTip.Ellipse)
                 stylusShape = 0;
             else
                 stylusShape = 1;
-            bytes.Add(stylusShape);
-
-            target.Write(bytes.ToArray(), 0, bytes.Count);
+            target.WriteByte(stylusShape);
         }
 
         public static void Serialize(Stream target, Color color)
