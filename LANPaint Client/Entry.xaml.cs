@@ -25,6 +25,8 @@ namespace LANPaint_Client
         {
             InitializeComponent();
 
+            Visibility = System.Windows.Visibility.Hidden;
+
             ConnectDialog dialog = new ConnectDialog();
             dialog.ShowDialog();
         }

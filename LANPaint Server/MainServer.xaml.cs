@@ -25,13 +25,21 @@ namespace LANPaint_Server
         {
             InitializeComponent();
 
-            manager = new Server(mainCanvas, "Superserver penis", clientsListBox.Items);
+            BasicServerData basic = new BasicServerData(SystemParameters.PrimaryScreenWidth - 50, SystemParameters.PrimaryScreenHeight - 50);
+            basic.ShowDialog();
 
-            manager.StartAsync();
+            if (basic.Success)
+            {
+                manager = new Server(mainCanvas, basic.nameTextBox.Text, clientsListBox.Items);
 
-            mainCanvas.SizeChanged += mainCanvas_SizeChanged;
-            mainCanvas.Width = 720;
-            mainCanvas.Height = 480;
+                manager.StartAsync();
+
+                mainCanvas.SizeChanged += mainCanvas_SizeChanged;
+                mainCanvas.Width = basic.xSize.Value.Value;
+                mainCanvas.Height = basic.ySize.Value.Value;
+            }
+            else
+                Close();
         }
 
         public void mainCanvas_SizeChanged(object sender, SizeChangedEventArgs e)

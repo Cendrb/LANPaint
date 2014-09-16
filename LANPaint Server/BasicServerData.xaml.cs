@@ -19,14 +19,24 @@ namespace LANPaint_Server
     /// </summary>
     public partial class BasicServerData : Window
     {
-        public BasicServerData()
+        public bool Success { get; private set; }
+
+        public BasicServerData(double defaultX, double defaultY)
         {
             InitializeComponent();
+
+            xSize.Value = defaultX;
+            ySize.Value = defaultY;
         }
 
         private void startButton_Click(object sender, RoutedEventArgs e)
         {
+            if(xSize.Value > 0 && ySize.Value > 0 && nameTextBox.Text != String.Empty)
+            {
+                Success = true;
 
+                Close();
+            }
         }
     }
 }
