@@ -24,14 +24,26 @@ namespace LANPaint_Client
     {
         Painter painter;
 
+        bool closed = false;
+
         public MainClient(string name, IPAddress target)
         {
             InitializeComponent();
 
             LanCanvas lanCanvas = new LanCanvas(mainCanvas, new IdGenerator(), name, PermissionsData.Default);
             painter = new Painter(lanCanvas, name);
+            painter.Disconnected += painter_Disconnected;
             painter.Connect(target, StaticPenises.CS_PORT, StaticPenises.SC_PORT);
             painter.RequestWholeCanvas();
+        }
+
+        private void painter_Disconnected(Painter obj)
+        {
+            if (!closed)
+            {
+                Dispatcher.Invoke(new Action(() => Close()));
+                MessageBox.Show("Unable to communicate with the server", "Connection lost", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+            }
         }
 
         public void mainCanvas_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -43,6 +55,7 @@ namespace LANPaint_Client
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            closed = true;
             painter.Disconnect();
         }
 

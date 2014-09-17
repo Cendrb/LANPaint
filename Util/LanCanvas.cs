@@ -339,7 +339,9 @@ namespace Util
             source.Read(heightBytes, 0, heightBytes.Length);
             Height = BitConverter.ToDouble(heightBytes, 0);
 
-            canvas.Strokes.Clear();
+            canvas.Dispatcher.Invoke(new Action(() => canvas.Strokes.Clear()));
+
+            StrokeCollection strokes = canvas.Dispatcher.Invoke<StrokeCollection>(new Func<StrokeCollection>(() => canvas.Strokes));
 
             bool end = false;
 
@@ -350,10 +352,10 @@ namespace Util
                 switch (command[0])
                 {
                     case StrokeBitConverter.SIGNED_POINTER_STROKE_SIGNAL:
-                        canvas.Strokes.Add(StrokeBitConverter.GetSignedPointerStroke(source));
+                        canvas.Dispatcher.Invoke(new Action(() => strokes.Add(StrokeBitConverter.GetSignedPointerStroke(source))));
                         break;
                     case StrokeBitConverter.SIGNED_STROKE_SIGNAL:
-                        canvas.Strokes.Add(StrokeBitConverter.GetSignedStroke(source));
+                        canvas.Dispatcher.Invoke(new Action(() => strokes.Add(StrokeBitConverter.GetSignedStroke(source))));
                         break;
                     case StrokeBitConverter.STROKES_END:
                         end = true;

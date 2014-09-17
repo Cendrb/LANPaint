@@ -115,5 +115,29 @@ namespace LANPaint_Server
         {
             Listening = false;
         }
+
+        public void LoadCanvas(string path)
+        {
+            using (FileStream stream = new FileStream(path, FileMode.Open))
+            {
+                lanCanvas.Deserialize(stream);
+            }
+        }
+
+        public void SaveCanvas(string path)
+        {
+            using (FileStream stream = new FileStream(path, FileMode.Create))
+            {
+                lanCanvas.Serialize(stream);
+            }
+        }
+
+        public void RefreshClientsCanvases()
+        {
+            foreach(PainterClient client in clients)
+            {
+                client.PainterPenis.ServerHandle.SendWholeCanvas();
+            }
+        }
     }
 }

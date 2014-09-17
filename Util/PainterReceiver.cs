@@ -87,6 +87,9 @@ namespace Util
                             case PainterSender.Commands.C_DISCONNECT:
                                 disconnect();
                                 break;
+                            case PainterSender.Commands.CS_SEND_WHOLE_CANVAS:
+                                receiveWholeCanvas();
+                                break;
                             default:
                                 Log.Warning("Unknown command received");
                                 break;
@@ -100,6 +103,11 @@ namespace Util
             {
                 Log.Error(e);
             }
+        }
+
+        private void receiveWholeCanvas()
+        {
+            lanCanvas.Deserialize(remoteStream);
         }
 
         private void wipeObjects()

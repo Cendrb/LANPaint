@@ -4,10 +4,19 @@
         Title="Server" Height="378.464" Width="720.28" ResizeMode="CanMinimize">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="3*"/>
             <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="220"/>
         </Grid.ColumnDefinitions>
         <InkCanvas x:Name="mainCanvas" Margin="10,10,9.403,10" IsEnabled="False" Background="#FFE8E8E8"></InkCanvas>
         <ListBox x:Name="clientsListBox" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+        <DockPanel Height="100" LastChildFill="False" Margin="0,0,0,0" VerticalAlignment="Top">
+            <Menu Height="17" VerticalAlignment="Top">
+                <MenuItem Header="_File">
+                    <MenuItem x:Name="loadMenu" Header="Load"/>
+                    <MenuItem x:Name="saveMenu" Header="Save"/>
+                </MenuItem>
+            </Menu>
+
+        </DockPanel>
     </Grid>
 </Window>

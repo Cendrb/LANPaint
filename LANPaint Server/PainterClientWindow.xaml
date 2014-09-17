@@ -4,7 +4,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             mc:Ignorable="d" Height="78" Width="221" Background="#FFFBFBFB">
+             mc:Ignorable="d" Height="78" Width="220" Background="#FFFBFBFB">
     <Grid>
         <Label x:Name="nameLabel" Content="Name" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" FontSize="16"/>
         <Button x:Name="kickButton" Content="Kick" Margin="175,0,10,11" Click="kickButton_Click" Height="21" VerticalAlignment="Bottom"/>

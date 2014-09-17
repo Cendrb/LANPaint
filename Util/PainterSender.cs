@@ -107,6 +107,16 @@ namespace Util
             }
         }
 
+        public void SendWholeCanvas()
+        {
+            lock(stream)
+            {
+                sendBeginByte();
+                stream.WriteByte(Commands.CS_SEND_WHOLE_CANVAS);
+                lanCanvas.Serialize(stream);
+            }
+        }
+
         public void SendStroke(SignedStroke stroke)
         {
             lock (stream)
@@ -185,6 +195,11 @@ namespace Util
             {
                 painterSender.WipeObjects();
             }
+
+            public void SendWholeCanvas()
+            {
+                painterSender.SendWholeCanvas();
+            }
         }
 
         public static class Commands
@@ -204,6 +219,7 @@ namespace Util
             public const byte CS_SEND_OBJECT = 3;
             public const byte CS_REMOVE_OBJECT = 4;
             public const byte CS_SEND_PERMISSIONS = 23;
+            public const byte CS_SEND_WHOLE_CANVAS = 53;
             public const byte C_DISCONNECT = 255;
         }
     }
